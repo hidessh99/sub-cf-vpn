@@ -8481,5 +8481,20 @@
     "postalCode": "506819",
     "latitude": "1.37778",
     "longitude": "103.95944"
+  },  
+  {
+    "proxy": "87.248.129.16",
+    "port": "8443",
+    "proxyip": true,
+    "ip": "87.248.129.16",
+    "latency": 2026,
+    "asn": 31898,
+    "asOrganization": "Tose Eh Ertebatat Novin Aria Co PJS",
+    "colo": "SIN",
+    "country": "AE",
+    "city": "Dubai",
+    "postalCode": "506819",
+    "latitude": "25.2585",
+    "longitude": "55.3047"
   }
 ]
