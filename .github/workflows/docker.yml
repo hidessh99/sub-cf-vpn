@@ -8,6 +8,7 @@ on:
     paths-ignore:
       - 'README.md'
       - 'doc/**'
+      - 'docker/**'
   pull_request:
     branches:
       - main
@@ -15,6 +16,7 @@ on:
     paths-ignore:
       - 'README.md'
       - 'doc/**'
+      - 'docker/**'
   workflow_dispatch:
 
 env:

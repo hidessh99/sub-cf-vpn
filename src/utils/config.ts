@@ -11,5 +11,5 @@ export const CONFIG = {
   bugListUrl: import.meta.env.VITE_BUG_LIST_URL || "/bug_list.json",
   apiCheckUrl: import.meta.env.VITE_API_CHECK_URL || "/api/check?ips=",
   pathTemplate: import.meta.env.VITE_PATH_TEMPLATE || "/{ip}-{port}",
-  webName: import.meta.env.VITE_WEB_NAME || "LuFeng VPN"
+  webName: import.meta.env.VITE_WEB_NAME || "HideSSH VPN CF"
 };

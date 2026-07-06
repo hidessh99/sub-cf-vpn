@@ -1,4 +1,4 @@
-# 🚀 LuFeng VPN - Cloudflare VPN Tunnel Config Generator
+# 🚀 HideSSH VPN CF - Cloudflare VPN Tunnel Config Generator
 
 <div align="center">
 
@@ -126,7 +126,7 @@ Aplikasi ini mendukung kustomisasi melalui *Environment Variables* saat proses k
 
 | Nama Variabel | Nilai Default | Deskripsi |
 | :--- | :--- | :--- |
-| `VITE_WEB_NAME` | `"LuFeng VPN"` | Nama aplikasi web yang ditampilkan di UI. |
+| `VITE_WEB_NAME` | `"HideSSH VPN CF"` | Nama aplikasi web yang ditampilkan di UI. |
 | `VITE_PROXY_LIST_URL` | `"/proxyip.json"` | URL atau path lokasi file JSON daftar IP proxy Cloudflare. |
 | `VITE_DOMAIN_LIST_URL` | `"/domain.json"` | URL atau path lokasi file JSON daftar domain penanda. |
 | `VITE_BUG_LIST_URL` | `"/bug_list.json"` | URL atau path lokasi file JSON daftar Bug Host / SNI. |

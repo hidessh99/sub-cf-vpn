@@ -112,7 +112,7 @@ Aplikasi ini mendukung *12-Factor App methodology*. Anda dapat mengubah konfigur
 
 Contoh isi file `.env.local`:
 ```env
-VITE_WEB_NAME="LuFeng VPN Pro"
+VITE_WEB_NAME="HideSSH VPN CF"
 VITE_PROXY_LIST_URL="/proxyip.json"
 VITE_API_CHECK_URL="https://proxyip-check.bexcodex.xyz/"
 ```
