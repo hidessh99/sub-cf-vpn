@@ -5,6 +5,12 @@ import { CONFIG, MAIN_DOMAINS, BUG_LIST } from '../utils/config';
 import { generateSingleVlessLink, generateSingleTrojanLink, generateSingleSSLink } from '../utils/generators';
 import { useToast } from '../components/Toast';
 
+declare global {
+  interface Window {
+    QRCode: any;
+  }
+}
+
 const ITEMS_PER_PAGE = 20;
 const CONCURRENCY_LIMIT = 5; 
 

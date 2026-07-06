@@ -26,5 +26,7 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "include": ["src/**/*", "checker/**/*", "vite.config.ts"],
+  "exclude": ["functions", "node_modules", "dist"]
 }

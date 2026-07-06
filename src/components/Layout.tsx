@@ -13,8 +13,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <header className="hidden lg:block flex-none z-50 w-full backdrop-blur-xl bg-slate-900/70 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-teal-400 flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <i className="fas fa-bolt text-white text-sm"></i>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-teal-400 flex items-center justify-center shadow-lg shadow-purple-500/20 overflow-hidden p-1.5">
+              <img src="https://cdn.jsdelivr.net/gh/kumpulanremaja/cdn/icon6.svg" alt="logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="font-display font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-teal-400">
               {CONFIG.webName}
@@ -28,8 +28,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <header className="lg:hidden flex-none z-50 backdrop-blur-md bg-slate-900/80 border-b border-white/5 px-4 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-teal-400 flex items-center justify-center">
-            <i className="fas fa-bolt text-white text-xs"></i>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-teal-400 flex items-center justify-center overflow-hidden p-1.5">
+            <img src="https://cdn.jsdelivr.net/gh/kumpulanremaja/cdn/icon6.svg" alt="logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="font-display font-bold text-lg text-white">
             {CONFIG.webName}
