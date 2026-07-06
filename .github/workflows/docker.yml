@@ -57,6 +57,7 @@ jobs:
           images: |
             ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
           tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
             type=edge,branch=main
             type=edge,branch=master
             type=ref,event=branch
@@ -85,6 +86,7 @@ jobs:
           images: |
             ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}-checker
           tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
             type=edge,branch=main
             type=edge,branch=master
             type=ref,event=branch
