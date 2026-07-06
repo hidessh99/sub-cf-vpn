@@ -146,5 +146,5 @@ Aplikasi ini mendukung kustomisasi melalui *Environment Variables* saat proses k
 Proyek ini didistribusikan di bawah lisensi **MIT**. Silakan digunakan, dimodifikasi, dan dikembangkan secara bebas.
 
 <div align="center">
-  <p>Dibuat dengan ❤️ oleh <b>LuFeng & HideSSH99</b></p>
+  <p>Dibuat dengan ❤️ oleh <b>HideSSH</b></p>
 </div>
