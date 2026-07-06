@@ -1,0 +1,21 @@
+services:
+  lufeng-vpn:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Kustomisasi environment variables saat proses build (opsional, hapus komentar untuk mengubah)
+        # VITE_WEB_NAME: "LuFeng VPN"
+        # VITE_PROXY_LIST_URL: "/proxyip.json"
+        # VITE_API_CHECK_URL: "https://proxyip-check.bexcodex.xyz/"
+    image: lufeng-vpn:latest
+    container_name: lufeng-vpn-app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
