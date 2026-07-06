@@ -8,6 +8,7 @@ export const BUG_LIST = ["dev.appsflyer.com","go.appsflyer.com","cdn.customlinks
 export const CONFIG = {
   proxyListUrl: import.meta.env.VITE_PROXY_LIST_URL || "https://raw.githubusercontent.com/hidessh99/Cf-vpntunnel/refs/heads/main/proxyip.json",
   domainListUrl: import.meta.env.VITE_DOMAIN_LIST_URL || "/domain.json",
+  bugListUrl: import.meta.env.VITE_BUG_LIST_URL || "/bug_list.json",
   apiCheckUrl: import.meta.env.VITE_API_CHECK_URL || "https://proxyip-check.bexcodex.xyz/",
   pathTemplate: import.meta.env.VITE_PATH_TEMPLATE || "/{ip}-{port}",
   webName: import.meta.env.VITE_WEB_NAME || "LuFeng VPN"

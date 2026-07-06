@@ -31,6 +31,7 @@ const Generator: React.FC = () => {
   const [formPassword, setFormPassword] = useState('');
   const [formSecurity, setFormSecurity] = useState<'tls' | 'none'>('tls');
   const [mainDomains, setMainDomains] = useState<string[]>(MAIN_DOMAINS);
+  const [bugList, setBugList] = useState<string[]>(BUG_LIST);
   const [formDomain, setFormDomain] = useState(MAIN_DOMAINS[Math.floor(Math.random() * MAIN_DOMAINS.length)]);
   const [formBug, setFormBug] = useState('');
   const [formManualBug, setFormManualBug] = useState('');
@@ -66,6 +67,17 @@ const Generator: React.FC = () => {
       })
       .catch(() => {
         // Fallback ke MAIN_DOMAINS bawaan jika gagal memuat
+      });
+
+    fetch(CONFIG.bugListUrl)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0 && mountedRef.current) {
+          setBugList(data);
+        }
+      })
+      .catch(() => {
+        // Fallback ke BUG_LIST bawaan jika gagal memuat
       });
 
     return () => { mountedRef.current = false; };
@@ -568,12 +580,12 @@ const Generator: React.FC = () => {
                          </div>
 
                          <div className="space-y-1">
-                             <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Bug</label>
-                             <select value={formBug} onChange={e => setFormBug(e.target.value)} className="gento-input w-full rounded-xl px-4 py-3 text-xs mb-2">
-                                 <option value="">Default</option>
-                                 <option value="manual">Manual Input</option>
-                                 {BUG_LIST.map(b => <option key={b} value={b}>{b}</option>)}
-                             </select>
+                              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Bug</label>
+                              <select value={formBug} onChange={e => setFormBug(e.target.value)} className="gento-input w-full rounded-xl px-4 py-3 text-xs mb-2">
+                                  <option value="">Default</option>
+                                  <option value="manual">Manual Input</option>
+                                  {bugList.map(b => <option key={b} value={b}>{b}</option>)}
+                              </select>
                              {formBug === 'manual' && (
                                  <input type="text" value={formManualBug} onChange={e => setFormManualBug(e.target.value)} placeholder="e.g. bug.com" className="gento-input w-full rounded-xl px-4 py-3 text-xs" />
                              )}
