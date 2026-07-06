@@ -13,6 +13,10 @@ services:
     restart: unless-stopped
     ports:
       - "8080:80"
+    volumes:
+      # Mount file statis agar bisa diedit langsung di VPS tanpa rebuild kontainer
+      - ./domain.json:/usr/share/nginx/html/domain.json
+      - ./public/proxyip.json:/usr/share/nginx/html/proxyip.json
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 30s

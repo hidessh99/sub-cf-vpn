@@ -30,6 +30,7 @@ const Generator: React.FC = () => {
   const [formUUID, setFormUUID] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formSecurity, setFormSecurity] = useState<'tls' | 'none'>('tls');
+  const [mainDomains, setMainDomains] = useState<string[]>(MAIN_DOMAINS);
   const [formDomain, setFormDomain] = useState(MAIN_DOMAINS[Math.floor(Math.random() * MAIN_DOMAINS.length)]);
   const [formBug, setFormBug] = useState('');
   const [formManualBug, setFormManualBug] = useState('');
@@ -54,6 +55,19 @@ const Generator: React.FC = () => {
     setFormUUID(generateUUID());
     setFormPassword(generateUUID());
     loadProxies(CONFIG.proxyListUrl);
+
+    fetch(CONFIG.domainListUrl)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0 && mountedRef.current) {
+          setMainDomains(data);
+          setFormDomain(data[Math.floor(Math.random() * data.length)]);
+        }
+      })
+      .catch(() => {
+        // Fallback ke MAIN_DOMAINS bawaan jika gagal memuat
+      });
+
     return () => { mountedRef.current = false; };
   }, []);
 
@@ -548,7 +562,7 @@ const Generator: React.FC = () => {
                              <div className="space-y-1">
                                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Domain</label>
                                  <select value={formDomain} onChange={e => setFormDomain(e.target.value)} className="gento-input w-full rounded-xl px-3 py-3 text-xs">
-                                     {MAIN_DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
+                                     {mainDomains.map(d => <option key={d} value={d}>{d}</option>)}
                                  </select>
                              </div>
                          </div>
