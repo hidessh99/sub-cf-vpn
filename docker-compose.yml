@@ -17,7 +17,7 @@ services:
       # Mount file statis agar bisa diedit langsung di VPS tanpa rebuild kontainer
       - ./domain.json:/usr/share/nginx/html/domain.json
       - ./bug_list.json:/usr/share/nginx/html/bug_list.json
-      - ./public/proxyip.json:/usr/share/nginx/html/proxyip.json
+      - ./proxyip.json:/usr/share/nginx/html/proxyip.json
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 30s
