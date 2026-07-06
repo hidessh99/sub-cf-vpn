@@ -129,7 +129,7 @@ Aplikasi ini mendukung kustomisasi melalui *Environment Variables* saat proses k
 | `VITE_PROXY_LIST_URL` | `"/proxyip.json"` | URL atau path lokasi file JSON daftar IP proxy Cloudflare. |
 | `VITE_DOMAIN_LIST_URL` | `"/domain.json"` | URL atau path lokasi file JSON daftar domain penanda. |
 | `VITE_BUG_LIST_URL` | `"/bug_list.json"` | URL atau path lokasi file JSON daftar Bug Host / SNI. |
-| `VITE_API_CHECK_URL` | `"https://proxyip-check.bexcodex.xyz/"` | Endpoint API eksternal untuk mengecek latensi & status hidup proxy. |
+| `VITE_API_CHECK_URL` | `"/api/check?ips="` | Endpoint API internal (self-hosted Bun checker) atau eksternal untuk mengecek latensi & status hidup proxy. |
 | `VITE_PATH_TEMPLATE` | `"/{ip}-{port}"` | Format template path WebSocket/HTTPUpgrade yang dihasilkan. |
 
 ---
