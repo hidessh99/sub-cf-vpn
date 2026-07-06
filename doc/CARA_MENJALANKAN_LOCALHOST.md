@@ -92,7 +92,7 @@ docker compose up -d --build
 
 ### Langkah 3: Buka Browser
 Aplikasi sekarang dilayani oleh Nginx di dalam kontainer Docker. Buka browser dan akses:
-👉 **http://localhost:8080**
+👉 **http://localhost:4001**
 
 ### Cara Menghentikan Kontainer Docker
 Untuk mematikan aplikasi Docker yang sedang berjalan, ketik:

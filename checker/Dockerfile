@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json index.ts ./
 
 # Expose checker port
-EXPOSE 3001
+EXPOSE 4002
 
 # Run the checker microservice with Bun
 CMD ["bun", "run", "index.ts"]

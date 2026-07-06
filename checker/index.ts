@@ -36,7 +36,7 @@ async function checkProxy(ip: string, port: number, timeoutMs = 2500): Promise<C
   });
 }
 
-const PORT = parseInt(process.env.PORT || '3001', 10);
+const PORT = parseInt(process.env.PORT || '4002', 10);
 
 const server = Bun.serve({
   port: PORT,

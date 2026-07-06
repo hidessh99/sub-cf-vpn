@@ -26,7 +26,7 @@
 - 📡 **Live Latency & Status Checker**: Mengecek status aktif/mati (*active/dead*) serta latensi dari setiap proxy secara *real-time* dengan antrean *concurrency* yang teroptimasi agar browser tidak *freeze*.
 - 📲 **QR Code & Clash YAML Generator**: Buat kode QR secara instan untuk di-scan dari HP (V2RayNG / Shadowrocket) serta dukungan ekspor format konfigurasi Clash/Meta.
 - 🎨 **UI/UX Premium & Responsive**: Desain *dark mode* bergaya kaca (*glassmorphism*) yang interaktif, animasi halus, dilengkapi dengan *Toast notifications*.
-- 🐳 **12-Factor App & Docker Ready**: Didesain menggunakan arsitektur *multi-stage Docker build* yang sangat ringan (**Nginx Alpine**, port aman unprivileged `8080`) serta mendukung integrasi CI/CD GitHub Actions.
+- 🐳 **12-Factor App & Docker Ready**: Didesain menggunakan arsitektur *multi-stage Docker build* yang sangat ringan (**Nginx Alpine**, port aman unprivileged `4001`) serta mendukung integrasi CI/CD GitHub Actions.
 
 ---
 
@@ -71,7 +71,7 @@ Berikut adalah gambaran arsitektur folder dan fungsi setiap komponen penting di 
 ├── 📄 .github/workflows/docker.yml      # Alur kerja CI/CD GitHub Actions untuk build Docker otomatis
 ├── 📄 Dockerfile                        # Konfigurasi Multi-Stage Build Docker (Stage 1: Bun, Stage 2: Nginx)
 ├── 📄 docker-compose.yml                # Konfigurasi orkestrasi kontainer & pemetaan volume dinamis
-├── 📄 nginx.conf                        # Konfigurasi Nginx produksi (Gzip, SPA Routing, Port 8080)
+├── 📄 nginx.conf                        # Konfigurasi Nginx produksi (Gzip, SPA Routing, Port 4001)
 ├── 📄 domain.json                       # ⚡ File sumber daftar domain dinamis yang bisa diedit langsung
 ├── 📄 bug_list.json                     # ⚡ File sumber daftar bug host dinamis yang bisa diedit langsung
 ├── 📄 proxyip.json                      # ⚡ File sumber daftar IP proxy dinamis yang bisa diedit langsung
@@ -88,7 +88,7 @@ Anda dapat menjalankan aplikasi ini dengan 2 metode utama. Untuk panduan yang le
 
 ### 1. Menggunakan Docker Compose (Sangat Disarankan untuk VPS / Production)
 
-Metode ini menjalankan aplikasi di dalam kontainer terisolasi dengan **Nginx** di port internal `8080` (aman dari bentrok port 80/443 di VPS Anda):
+Metode ini menjalankan aplikasi di dalam kontainer terisolasi dengan **Nginx** di port internal `4001` (aman dari bentrok port 80/443 di VPS Anda):
 
 ```bash
 # 1. Clone repository ini
@@ -98,7 +98,7 @@ cd sub-cf-vpn
 # 2. Build dan jalankan di background (Detached Mode)
 docker compose up -d --build
 ```
-Aplikasi langsung dapat diakses melalui browser di: 👉 **http://localhost:8080** (atau `http://IP_VPS_ANDA:8080`).
+Aplikasi langsung dapat diakses melalui browser di: 👉 **http://localhost:4001** (atau `http://IP_VPS_ANDA:4001`).
 
 > [!TIP]
 > **Cara Mengedit Domain & Bug Host Tanpa Rebuild Kontainer:**  
@@ -136,8 +136,8 @@ Aplikasi ini mendukung kustomisasi melalui *Environment Variables* saat proses k
 
 ## 🔒 Keamanan & Arsitektur Port Kontainer
 
-- **Unprivileged Port 8080**: Kontainer Docker dikonfigurasi untuk mendengarkan pada port **8080** (bukan port standar 80). Hal ini mencegah terjadinya bentrok port dengan web server reverse proxy (seperti Nginx, Apache, Caddy, atau Traefik) yang berjalan di VPS utama Anda.
-- **Reverse Proxy Ready**: Anda dapat dengan mudah mengarahkan domain Anda (misal via Nginx Proxy Manager atau Cloudflare Tunnel) langsung ke target `http://127.0.0.1:8080`.
+- **Unprivileged Port 4001**: Kontainer Docker dikonfigurasi untuk mendengarkan pada port **4001** (bukan port standar 80). Hal ini mencegah terjadinya bentrok port dengan web server reverse proxy (seperti Nginx, Apache, Caddy, atau Traefik) yang berjalan di VPS utama Anda.
+- **Reverse Proxy Ready**: Anda dapat dengan mudah mengarahkan domain Anda (misal via Nginx Proxy Manager atau Cloudflare Tunnel) langsung ke target `http://127.0.0.1:4001`.
 
 ---
 
