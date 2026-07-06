@@ -1,38 +1,49 @@
 services:
-  lufeng-vpn:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        # Kustomisasi environment variables saat proses build (opsional, hapus komentar untuk mengubah)
-        # VITE_WEB_NAME: "LuFeng VPN"
-        # VITE_PROXY_LIST_URL: "/proxyip.json"
-        # VITE_API_CHECK_URL: "/api/check?ips="
-    image: lufeng-vpn:latest
-    container_name: lufeng-vpn-app
-    restart: unless-stopped
+  lufeng_vpn_web:
+    # Menggunakan image dari GHCR atau build lokal
+    image: ghcr.io/hidessh99/sub-cf-vpn:${VERSION}
+    # build:
+    #   context: ..
+    #   dockerfile: Dockerfile
+    # container_name: ${CONTAINER_NAME}
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPUS}
+          memory: ${MEMORY_LIMIT}
+    restart: always
     depends_on:
       - lufeng-checker
     ports:
-      - "4001:4001"
+      - ${HOST_IP}:${WEB_HTTP_PORT}:4001
     volumes:
-      # Mount file statis agar bisa diedit langsung di VPS tanpa rebuild kontainer
-      - ./domain.json:/usr/share/nginx/html/domain.json
-      - ./bug_list.json:/usr/share/nginx/html/bug_list.json
-      - ./proxyip.json:/usr/share/nginx/html/proxyip.json
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4001/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
+      - ${APP_PATH}domain.json:/usr/share/nginx/html/domain.json:ro
+      - ${APP_PATH}bug_list.json:/usr/share/nginx/html/bug_list.json:ro
+      - ${APP_PATH}proxyip.json:/usr/share/nginx/html/proxyip.json:ro
+    labels:
+      createdBy: "bt_apps"
+    networks:
+      - baota_net
 
   lufeng-checker:
     build:
-      context: ./checker
+      context: ../checker
       dockerfile: Dockerfile
-    image: lufeng-checker:latest
-    container_name: lufeng-vpn-checker
-    restart: unless-stopped
+    image: hidessh99/sub-cf-vpn-checker:${VERSION}
+    # container_name: ${CONTAINER_NAME}_checker
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512MB"
+    restart: always
     expose:
       - "4002"
+    labels:
+      createdBy: "bt_apps"
+    networks:
+      - baota_net
+
+networks:
+  baota_net:
+    external: true
