@@ -23,10 +23,10 @@
 - 🔄 **100% Konfigurasi Dinamis Tanpa Rebuild**:
   - Daftar **Domain** (`domain.json`), **Bug Host** (`bug_list.json`), dan **Proxy IP** (`proxyip.json`) dimuat secara dinamis saat *runtime*.
   - Anda dapat mengubah atau menambah daftar domain dan bug host langsung di VPS Anda tanpa perlu mengompilasi ulang kode aplikasi atau mem-build ulang image Docker!
-- 📡 **Live Latency & Status Checker**: Mengecek status aktif/mati (*active/dead*) serta latensi dari setiap proxy secara *real-time* dengan antrean *concurrency* yang teroptimasi agar browser tidak *freeze*.
+- 📡 **Bun Microservice Checker (Port 4002)**: Mengecek status aktif/mati (*active/dead*) serta latensi proxy secara *real-time* melalui layanan mandiri berbasis **Bun (`checker/index.ts`)** yang cepat dan terisolasi di jaringan internal kontainer.
 - 📲 **QR Code & Clash YAML Generator**: Buat kode QR secara instan untuk di-scan dari HP (V2RayNG / Shadowrocket) serta dukungan ekspor format konfigurasi Clash/Meta.
-- 🎨 **UI/UX Premium & Responsive**: Desain *dark mode* bergaya kaca (*glassmorphism*) yang interaktif, animasi halus, dilengkapi dengan *Toast notifications*.
-- 🐳 **12-Factor App & Docker Ready**: Didesain menggunakan arsitektur *multi-stage Docker build* yang sangat ringan (**Nginx Alpine**, port aman unprivileged `4001`) serta mendukung integrasi CI/CD GitHub Actions.
+- 🎨 **UI/UX Cyberpunk Glassmorphism**: Desain *dark mode* premium bergaya kaca dengan wadah kapsul (*glass pill badge*) untuk logo kustom (`kontmu.svg`), favicon kustom (`icon6.svg`), animasi halus, serta **Judul Tab Browser Dinamis** yang otomatis mengikuti nama konfigurasi web Anda.
+- 🐳 **12-Factor App & aaPanel Ready**: Arsitektur **Dual-Container** (Frontend Nginx Alpine di port `4001` + Backend Bun Checker di port internal `4002`), dilindungi verifikasi keamanan *Subresource Integrity (SRI SHA-512)* pada aset CDN, serta sangat mudah dideploy di aaPanel / Baota Panel maupun CI/CD GitHub Actions.
 
 ---
 
@@ -34,12 +34,13 @@
 
 | Komponen | Teknologi / Library | Keterangan |
 | :--- | :--- | :--- |
-| **Runtime & Package Manager** | **Bun (`oven/bun:1`)** | Pengganti Node.js/npm yang memberikan kecepatan kompilasi dan instalasi maksimal. |
+| **Runtime & Package Manager** | **Bun (`oven/bun:1`)** | Pengganti Node.js/npm yang memberikan kecepatan kompilasi dan eksekusi maksimal. |
 | **Frontend Core** | **React 18 + TypeScript** | Membangun antarmuka SPA (*Single Page Application*) dengan kepastian tipe data. |
-| **Build Tool** | **Vite** | Dev server dengan *Hot Module Replacement* (HMR) super cepat & bundler produksi teroptimasi. |
-| **Styling** | **Tailwind CSS + Vanilla CSS** | Desain modern, responsif, dan kaya animasi mikro. |
+| **Backend Checker** | **Bun Standalone HTTP Service** | Microservice pengecekan socket TCP berkecepatan tinggi pada port internal `4002`. |
+| **Build Tool** | **Vite 6** | Dev server dengan *Hot Module Replacement* (HMR) super cepat & bundler produksi teroptimasi. |
+| **Styling & UI** | **Tailwind CSS + Vanilla CSS** | Desain modern, responsif, glassmorphism, dan kaya animasi mikro. |
 | **Web Server Kontainer** | **Nginx Alpine Slim** | Web server ringan (< 15 MB) untuk menyajikan aset statis dengan kompresi Gzip di dalam Docker. |
-| **CI/CD Pipeline** | **GitHub Actions** | Otomatisasi *build* dan *push* image Docker multi-arsitektur (`amd64` & `arm64`). |
+| **CI/CD Pipeline** | **GitHub Actions** | Otomatisasi *build* dan *push* image Docker ke **GitHub Container Registry (GHCR)**. |
 
 ---
 
@@ -48,6 +49,11 @@
 Berikut adalah gambaran arsitektur folder dan fungsi setiap komponen penting di dalam repository ini:
 
 ```text
+├── 📁 checker/
+│   └── 📄 index.ts                      # 🔥 Bun Standalone HTTP Microservice (API Checker Port 4002)
+├── 📁 docker/
+│   ├── 📄 docker-compose.yml            # Konfigurasi orkestrasi kontainer ganda khusus aaPanel / VPS
+│   └── 📄 .env                          # Konfigurasi variabel lingkungan Docker (HOST_IP, PORT, dll.)
 ├── 📁 doc/
 │   └── 📄 CARA_MENJALANKAN_LOCALHOST.md # Panduan lengkap menjalankan di localhost (Bun & Docker)
 ├── 📁 public/
@@ -56,7 +62,7 @@ Berikut adalah gambaran arsitektur folder dan fungsi setiap komponen penting di 
 │   └── 📄 bug_list.json                 # Daftar bug host (disajikan sebagai aset statis oleh Nginx)
 ├── 📁 src/
 │   ├── 📁 components/
-│   │   ├── 📄 Layout.tsx                # Kerangka utama tampilan web (Header, Navigation, Footer)
+│   │   ├── 📄 Layout.tsx                # Kerangka utama tampilan web (Header Glassmorphism, Logo kontmu.svg)
 │   │   └── 📄 Toast.tsx                 # Komponen notifikasi pop-up (sukses salin link, error, dll.)
 │   ├── 📁 pages/
 │   │   └── 📄 Generator.tsx             # 🔥 Logika inti aplikasi (State, Filter, Checker, & Form UI)
@@ -66,18 +72,19 @@ Berikut adalah gambaran arsitektur folder dan fungsi setiap komponen penting di 
 │   │   └── 📄 generators.ts             # 🔥 Algoritma pembentuk link VLESS, Trojan, SS, dan Clash
 │   ├── 📄 App.tsx                       # Root komponen React & penanggung jawab rute halaman
 │   ├── 📄 index.css                     # Sistem desain, Tailwind directives, & animasi mikro kustom
-│   ├── 📄 index.tsx                     # Titik masuk utama (Entry point) rendering DOM Vite
-│   └── 📄 types.ts                      # Definisi tipe data TypeScript (ProxyItem, Status, dll.)
-├── 📄 .github/workflows/docker.yml      # Alur kerja CI/CD GitHub Actions untuk build Docker otomatis
+│   ├── 📄 index.tsx                     # Titik masuk utama (Entry point) rendering DOM & Judul Dinamis
+│   ├── 📄 types.ts                      # Definisi tipe data TypeScript (ProxyItem, Status, dll.)
+│   └── 📄 vite-env.d.ts                 # Kamus tipe data TypeScript untuk impor aset statis (CSS/SVG/PNG)
+├── 📄 .github/workflows/docker.yml      # Alur kerja CI/CD GitHub Actions untuk build Docker otomatis ke GHCR
 ├── 📄 Dockerfile                        # Konfigurasi Multi-Stage Build Docker (Stage 1: Bun, Stage 2: Nginx)
-├── 📄 docker-compose.yml                # Konfigurasi orkestrasi kontainer & pemetaan volume dinamis
-├── 📄 nginx.conf                        # Konfigurasi Nginx produksi (Gzip, SPA Routing, Port 4001)
+├── 📄 docker-compose.yml                # Konfigurasi orkestrasi kontainer utama
+├── 📄 nginx.conf                        # Konfigurasi Nginx produksi (Gzip, SPA Routing, Reverse Proxy ke Port 4002)
 ├── 📄 domain.json                       # ⚡ File sumber daftar domain dinamis yang bisa diedit langsung
 ├── 📄 bug_list.json                     # ⚡ File sumber daftar bug host dinamis yang bisa diedit langsung
 ├── 📄 proxyip.json                      # ⚡ File sumber daftar IP proxy dinamis yang bisa diedit langsung
 ├── 📄 package.json                      # Daftar dependensi & skrip eksekusi Bun
-├── 📄 tsconfig.json                     # Konfigurasi kompilator TypeScript (berisi dukungan @types/bun)
-└── 📄 vite.config.ts                    # Konfigurasi Vite & plugin React
+├── 📄 tsconfig.json                     # Konfigurasi kompilator TypeScript (berisi dukungan @types/bun & cloudflare)
+└── 📄 vite.config.ts                    # Konfigurasi Vite & proxy lokal ke API checker
 ```
 
 ---
@@ -86,23 +93,24 @@ Berikut adalah gambaran arsitektur folder dan fungsi setiap komponen penting di 
 
 Anda dapat menjalankan aplikasi ini dengan 2 metode utama. Untuk panduan yang lebih mendalam, silakan baca [doc/CARA_MENJALANKAN_LOCALHOST.md](doc/CARA_MENJALANKAN_LOCALHOST.md).
 
-### 1. Menggunakan Docker Compose (Sangat Disarankan untuk VPS / Production)
+### 1. Menggunakan Docker Compose (Sangat Disarankan untuk VPS / aaPanel)
 
-Metode ini menjalankan aplikasi di dalam kontainer terisolasi dengan **Nginx** di port internal `4001` (aman dari bentrok port 80/443 di VPS Anda):
+Metode ini menjalankan 2 kontainer terintegrasi (**Nginx Web** di port `4001` dan **Bun Checker** di port internal `4002`):
 
 ```bash
-# 1. Clone repository ini
+# 1. Clone repository ini di VPS Anda
 git clone https://github.com/hidessh99/sub-cf-vpn.git
 cd sub-cf-vpn
 
-# 2. Build dan jalankan di background (Detached Mode)
+# 2. Build dan jalankan menggunakan konfigurasi di folder docker/
+cd docker
 docker compose up -d --build
 ```
-Aplikasi langsung dapat diakses melalui browser di: 👉 **http://localhost:4001** (atau `http://IP_VPS_ANDA:4001`).
+Aplikasi langsung dapat diakses melalui browser di: 👉 **http://IP_VPS_ANDA:4001**.
 
 > [!TIP]
 > **Cara Mengedit Domain & Bug Host Tanpa Rebuild Kontainer:**  
-> Berkat fitur *Volume Mapping* di `docker-compose.yml`, Anda cukup mengedit file `domain.json`, `bug_list.json`, atau `proxyip.json` di folder root VPS Anda menggunakan text editor (misal: `nano domain.json`). Setelah disimpan, pengunjung web cukup **me-refresh browser** dan daftar domain/bug baru akan langsung muncul!
+> Berkat fitur *Volume Mapping*, Anda cukup mengedit file `domain.json`, `bug_list.json`, atau `proxyip.json` di VPS Anda menggunakan text editor (misal: `nano domain.json`). Setelah disimpan, pengunjung web cukup **me-refresh browser** dan daftar domain/bug baru akan langsung muncul tanpa perlu restart Docker!
 
 ### 2. Menggunakan Bun (Untuk Development Lokal / Modifikasi Kode)
 
