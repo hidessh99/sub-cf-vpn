@@ -50,8 +50,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GH_TOKEN }}
 
-      - name: Extract Docker Metadata (Tags & Labels)
-        id: meta
+      - name: Extract Docker Metadata for Web Frontend
+        id: meta_web
         uses: docker/metadata-action@v5
         with:
           images: |
@@ -66,14 +66,42 @@ jobs:
             type=semver,pattern={{major}}
             type=sha,format=short
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Web Frontend Image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta_web.outputs.tags }}
+          labels: ${{ steps.meta_web.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Extract Docker Metadata for API Checker
+        id: meta_checker
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}-checker
+          tags: |
+            type=edge,branch=main
+            type=edge,branch=master
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,format=short
+
+      - name: Build and Push API Checker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./checker
+          file: ./checker/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta_checker.outputs.tags }}
+          labels: ${{ steps.meta_checker.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

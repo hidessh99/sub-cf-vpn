@@ -29,7 +29,7 @@ services:
     build:
       context: ../checker
       dockerfile: Dockerfile
-    image: hidessh99/sub-cf-vpn-checker:${VERSION}
+    image: ghcr.io/hidessh99/sub-cf-vpn-checker:${VERSION}
     # container_name: ${CONTAINER_NAME}_checker
     deploy:
       resources:
