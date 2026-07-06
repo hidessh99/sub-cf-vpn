@@ -1,7 +1,0 @@
-VERSION=latest
-CONTAINER_NAME=lufeng_vpn_aHtY
-HOST_IP=127.0.0.1
-WEB_HTTP_PORT=4001
-CPUS=1
-MEMORY_LIMIT=1024MB
-APP_PATH=/www/wwwroot/docker/cfvpn
