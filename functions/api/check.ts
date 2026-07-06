@@ -1,3 +1,17 @@
+/// <reference types="@cloudflare/workers-types" />
+
+declare module 'cloudflare:sockets' {
+  export interface Socket {
+    opened: Promise<void>;
+    closed: Promise<void>;
+    close(): Promise<void>;
+    destroy(): void;
+    readable: ReadableStream;
+    writable: WritableStream;
+  }
+  export function connect(address: string, options?: any): Socket;
+}
+
 import { connect } from 'cloudflare:sockets';
 
 interface CheckResult {

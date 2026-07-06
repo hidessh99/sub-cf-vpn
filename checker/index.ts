@@ -40,7 +40,7 @@ const PORT = parseInt(process.env.PORT || '4002', 10);
 
 const server = Bun.serve({
   port: PORT,
-  async fetch(request) {
+  async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
     // Endpoint pengecekan kesehatan checker service

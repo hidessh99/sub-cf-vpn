@@ -12,7 +12,8 @@
     "skipLibCheck": true,
     "types": [
       "bun",
-      "node"
+      "node",
+      "@cloudflare/workers-types"
     ],
     "moduleResolution": "bundler",
     "isolatedModules": true,
@@ -27,6 +28,6 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["src/**/*", "checker/**/*", "vite.config.ts"],
-  "exclude": ["functions", "node_modules", "dist"]
+  "include": ["src/**/*", "checker/**/*", "functions/**/*", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }
