@@ -12,14 +12,14 @@ services:
     container_name: lufeng-vpn-app
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
       # Mount file statis agar bisa diedit langsung di VPS tanpa rebuild kontainer
       - ./domain.json:/usr/share/nginx/html/domain.json
       - ./bug_list.json:/usr/share/nginx/html/bug_list.json
       - ./proxyip.json:/usr/share/nginx/html/proxyip.json
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 5s
       retries: 3
