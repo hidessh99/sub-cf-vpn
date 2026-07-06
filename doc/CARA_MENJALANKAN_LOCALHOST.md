@@ -40,18 +40,22 @@ bun install
 ```
 *Perintah ini akan menginstal seluruh pustaka yang dibutuhkan dalam hitungan detik.*
 
-### Langkah 2: Jalankan Development Server
-Jalankan perintah berikut untuk memulai server lokal:
-```bash
-bun run dev
-```
-Atau cukup dengan versi singkat:
+### Langkah 2: Jalankan Development Server & API Checker
+Karena aplikasi ini memiliki layanan mandiri pengecek latensi proxy (*Self-Hosted API Checker*), Anda perlu menjalankan 2 layanan di terminal terpisah saat mode development lokal:
+
+**Terminal 1 (Jalankan Web Frontend):**
 ```bash
 bun dev
 ```
 
+**Terminal 2 (Jalankan API Checker Service di port 4002):**
+```bash
+bun run checker
+```
+*(Catatan: Tanpa menjalankan Terminal 2, fitur cek latensi di browser akan menampilkan status **DEAD** karena server checker belum aktif).*
+
 ### Langkah 3: Buka Browser
-Setelah perintah dijalankan, terminal akan memunculkan alamat lokal. Secara default, buka browser Anda dan akses:
+Setelah kedua perintah dijalankan, buka browser Anda dan akses:
 👉 **http://localhost:5173**
 
 ---

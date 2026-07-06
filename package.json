@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "checker": "bun run checker/index.ts",
     "build": "vite build",
     "preview": "vite preview"
   },

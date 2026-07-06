@@ -112,10 +112,11 @@ Jika Anda ingin mengubah tampilan atau mengembangkan fitur dengan fitur *Live Re
 # 1. Instal dependensi dengan Bun
 bun install
 
-# 2. Jalankan server development
+# 2. Jalankan server development & API Checker (di 2 terminal terpisah)
 bun dev
+bun run checker
 ```
-Aplikasi akan berjalan di: 👉 **http://localhost:5173**
+*(Aplikasi web di `http://localhost:5173`, dan API checker mandiri di port `4002`).*
 
 ---
 
