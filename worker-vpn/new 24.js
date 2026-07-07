@@ -88,9 +88,15 @@ async function reverseWeb(request, target, targetPath) {
   targetUrl.port = targetChunk[1]?.toString() || "443";
   targetUrl.pathname = targetPath || targetUrl.pathname;
 
-  const modifiedRequest = new Request(targetUrl, request);
+  const newHeaders = new Headers(request.headers);
+  newHeaders.set("X-Forwarded-Host", request.headers.get("Host"));
 
-  modifiedRequest.headers.set("X-Forwarded-Host", request.headers.get("Host"));
+  const modifiedRequest = new Request(targetUrl, {
+    method: request.method,
+    headers: newHeaders,
+    body: request.body,
+    redirect: "follow",
+  });
 
   const response = await fetch(modifiedRequest);
 
@@ -282,12 +288,8 @@ async function websocketHandler(request) {
   const webSocketPair = new WebSocketPair();
   const [client, webSocket] = Object.values(webSocketPair);
 
+  webSocket.accept({ allowHalfOpen: true });
   webSocket.binaryType = "arraybuffer";
-  try {
-    webSocket.accept({ allowHalfOpen: true });
-  } catch (e) {
-    webSocket.accept();
-  }
 
   let addressLog = "";
   let portLog = "";
@@ -320,11 +322,8 @@ async function websocketHandler(request) {
           }
           if (remoteSocketWrapper.value) {
             const writer = remoteSocketWrapper.value.writable.getWriter();
-            try {
-              await writer.write(chunk);
-            } finally {
-              writer.releaseLock();
-            }
+            await writer.write(chunk);
+            writer.releaseLock();
             return;
           }
 
@@ -396,7 +395,7 @@ async function websocketHandler(request) {
     });
 
   return new Response(null, {
-    status: 101,
+    status: 200,
     webSocket: client,
   });
 }
@@ -439,11 +438,8 @@ async function handleTCPOutBound(
     remoteSocket.value = tcpSocket;
     log(`connected to ${address}:${port}`);
     const writer = tcpSocket.writable.getWriter();
-    try {
-      await writer.write(rawClientData);
-    } finally {
-      writer.releaseLock();
-    }
+    await writer.write(rawClientData);
+    writer.releaseLock();
 
     return tcpSocket;
   }
@@ -486,11 +482,8 @@ async function handleUDPOutbound(targetAddress, targetPort, dataChunk, webSocket
     relayMessage.set(new Uint8Array(dataChunk), headerBuffer.length + separator.length);
 
     const writer = tcpSocket.writable.getWriter();
-    try {
-      await writer.write(relayMessage);
-    } finally {
-      writer.releaseLock();
-    }
+    await writer.write(relayMessage);
+    writer.releaseLock();
 
     await tcpSocket.readable.pipeTo(
       new WritableStream({
@@ -504,7 +497,7 @@ async function handleUDPOutbound(targetAddress, targetPort, dataChunk, webSocket
                 webSocket.send(chunk);
               }
             } catch (e) {
-              log("UDP webSocket.send error", e);
+              // WebSocket may have closed during send
             }
           }
         },
@@ -523,65 +516,49 @@ async function handleUDPOutbound(targetAddress, targetPort, dataChunk, webSocket
 
 function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
   let readableStreamCancel = false;
-  let isClosed = false;
+  let streamClosed = false;
   const stream = new ReadableStream({
     start(controller) {
-      webSocketServer.addEventListener("message", async (event) => {
-        if (readableStreamCancel || isClosed) {
+      webSocketServer.addEventListener("message", (event) => {
+        if (readableStreamCancel || streamClosed) {
           return;
         }
+        const message = event.data;
         try {
-          let message = event.data;
-          if (message instanceof Blob) {
-            message = await message.arrayBuffer();
-          } else if (typeof message === "string") {
-            message = new TextEncoder().encode(message).buffer;
-          }
-          if (!readableStreamCancel && !isClosed) {
-            controller.enqueue(message);
-          }
+          controller.enqueue(message);
         } catch (e) {
-          log("enqueue error", e);
+          // Controller may already be closed
         }
       });
       webSocketServer.addEventListener("close", () => {
         safeCloseWebSocket(webSocketServer);
-        if (readableStreamCancel || isClosed) {
+        if (readableStreamCancel || streamClosed) {
           return;
         }
-        isClosed = true;
+        streamClosed = true;
         try {
           controller.close();
         } catch (e) {
-          log("close error", e);
+          // Controller may already be closed due to auto-close behavior
         }
       });
       webSocketServer.addEventListener("error", (err) => {
         log("webSocketServer has error");
-        if (readableStreamCancel || isClosed) {
-          return;
-        }
-        isClosed = true;
         try {
           controller.error(err);
         } catch (e) {
-          log("error error", e);
+          // Controller may already be in error state
         }
       });
       const { earlyData, error } = base64ToArrayBuffer(earlyDataHeader);
       if (error) {
-        if (!readableStreamCancel && !isClosed) {
-          isClosed = true;
-          try {
-            controller.error(error);
-          } catch (e) {}
+        try {
+          controller.error(error);
+        } catch (e) {
+          // Controller may already be in error state
         }
       } else if (earlyData) {
-        if (!readableStreamCancel && !isClosed) {
-          try {
-            controller.enqueue(earlyData);
-          } catch (e) {}
-        }
+        controller.enqueue(earlyData);
       }
     },
 
@@ -592,7 +569,6 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
       }
       log(`ReadableStream was canceled, due to ${reason}`);
       readableStreamCancel = true;
-      isClosed = true;
       safeCloseWebSocket(webSocketServer);
     },
   });
@@ -818,8 +794,7 @@ async function remoteSocketToWS(remoteSocket, webSocket, responseHeader, retry, 
               webSocket.send(chunk);
             }
           } catch (e) {
-            log("remoteSocketToWS send error", e);
-            controller.error(e);
+            controller.error("webSocket send error: " + e.message);
           }
         },
         close() {
@@ -846,7 +821,7 @@ function safeCloseWebSocket(socket) {
       socket.close();
     }
   } catch (error) {
-    console.error("safeCloseWebSocket error", error);
+    // Ignore close errors - socket may already be closed by auto-close behavior
   }
 }
 
