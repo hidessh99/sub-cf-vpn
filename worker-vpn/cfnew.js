@@ -1556,8 +1556,12 @@
                 const rowHtml = match[0];
                 const cellMatch = rowHtml.match(cellRegex);
                 if (cellMatch && cellMatch[1] && cellMatch[2]) {
+                    let isp = cellMatch[1];
+                    while (/<[^>]*>/.test(isp)) {
+                        isp = isp.replace(/<[^>]*>/g, '');
+                    }
                     results.push({
-                        isp: cellMatch[1].trim().replace(/<.*?>/g, ''),
+                        isp: isp.trim(),
                         ip: cellMatch[2].trim()
                     });
                 }
