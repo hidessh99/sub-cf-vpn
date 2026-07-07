@@ -20,9 +20,10 @@
 
 - ⚡ **Dukungan Protokol Lengkap**: Generate tautan konfigurasi **VLESS**, **Trojan**, dan **Shadowsocks (SS)** dengan mudah dan presisi.
 - 🌐 **Cloudflare Tunnel Ready**: Mendukung kustomisasi port HTTP (80/8080/8880/dll) maupun HTTPS TLS (443/2052/2083/dll), *Wildcard Subdomain*, SNI, dan kustom path WebSocket/HTTPUpgrade.
-- 🔄 **100% Konfigurasi Dinamis Tanpa Rebuild**:
-  - Daftar **Domain** (`domain.json`), **Bug Host** (`bug_list.json`), dan **Proxy IP** (`proxyip.json`) dimuat secara dinamis saat *runtime*.
-  - Anda dapat mengubah atau menambah daftar domain dan bug host langsung di VPS Anda tanpa perlu mengompilasi ulang kode aplikasi atau mem-build ulang image Docker!
+- 🔄 **100% Konfigurasi Dinamis & GitHub Raw Live Sync**:
+  - Daftar **Domain** (`domain.json`), **Bug Host** (`bug_list.json`), dan **Proxy IP** (`proxyip.json`) dimuat secara dinamis secara *live* langsung dari GitHub Raw CDN (`raw.githubusercontent.com`).
+  - **Zero Maintenance di VPS**: Setiap kali Anda memperbarui daftar domain atau bug host di GitHub dan melakukan *push*, seluruh pengunjung web akan langsung menerima data terbaru tanpa perlu Anda login/SSH ke VPS ataupun mengedit file di server!
+  - **Smart Fallback**: Dilengkapi mekanisme otomatis untuk beralih (*fallback*) ke file JSON lokal VPS jika akses GitHub sedang bermasalah/down.
 - 📡 **Bun Microservice Checker (Port 4002)**: Mengecek status aktif/mati (*active/dead*) serta latensi proxy secara *real-time* melalui layanan mandiri berbasis **Bun (`checker/index.ts`)** yang cepat dan terisolasi di jaringan internal kontainer.
 - 📲 **QR Code & Clash YAML Generator**: Buat kode QR secara instan untuk di-scan dari HP (V2RayNG / Shadowrocket) serta dukungan ekspor format konfigurasi Clash/Meta.
 - 🎨 **UI/UX Cyberpunk Glassmorphism**: Desain *dark mode* premium bergaya kaca dengan wadah kapsul (*glass pill badge*) untuk logo kustom (`kontmu.svg`), favicon kustom (`icon6.svg`), animasi halus, serta **Judul Tab Browser Dinamis** yang otomatis mengikuti nama konfigurasi web Anda.
@@ -109,8 +110,9 @@ docker compose up -d --build
 Aplikasi langsung dapat diakses melalui browser di: 👉 **http://IP_VPS_ANDA:4001**.
 
 > [!TIP]
-> **Cara Mengedit Domain & Bug Host Tanpa Rebuild Kontainer:**  
-> Berkat fitur *Volume Mapping*, Anda cukup mengedit file `domain.json`, `bug_list.json`, atau `proxyip.json` di VPS Anda menggunakan text editor (misal: `nano domain.json`). Setelah disimpan, pengunjung web cukup **me-refresh browser** dan daftar domain/bug baru akan langsung muncul tanpa perlu restart Docker!
+> **Cara Kerja Live GitHub Sync & Zero VPS Maintenance:**  
+> Secara default, aplikasi mengambil data `domain.json`, `bug_list.json`, dan `proxyip.json` secara langsung dari **GitHub Raw CDN (`raw.githubusercontent.com`)**. Ini berarti **Anda tidak perlu lagi login ke VPS atau me-restart Docker** saat menambah domain/bug baru! Cukup edit dan *push* di repository GitHub Anda, dan seluruh pengunjung web akan langsung mendapatkan data terbaru saat me-refresh browser.
+> *(Jika GitHub Raw gagal diakses karena masalah jaringan, sistem otomatis beralih memuat dari file lokal VPS via volume mapping)*.
 
 ### 2. Menggunakan Bun (Untuk Development Lokal / Modifikasi Kode)
 
@@ -135,9 +137,9 @@ Aplikasi ini mendukung kustomisasi melalui *Environment Variables* saat proses k
 | Nama Variabel | Nilai Default | Deskripsi |
 | :--- | :--- | :--- |
 | `VITE_WEB_NAME` | `"HideSSH VPN CF"` | Nama aplikasi web yang ditampilkan di UI. |
-| `VITE_PROXY_LIST_URL` | `"/proxyip.json"` | URL atau path lokasi file JSON daftar IP proxy Cloudflare. |
-| `VITE_DOMAIN_LIST_URL` | `"/domain.json"` | URL atau path lokasi file JSON daftar domain penanda. |
-| `VITE_BUG_LIST_URL` | `"/bug_list.json"` | URL atau path lokasi file JSON daftar Bug Host / SNI. |
+| `VITE_PROXY_LIST_URL` | `"https://raw.githubusercontent.com/.../proxyip.json"` | URL GitHub Raw CDN atau path lokasi file JSON daftar IP proxy Cloudflare. |
+| `VITE_DOMAIN_LIST_URL` | `"https://raw.githubusercontent.com/.../domain.json"` | URL GitHub Raw CDN atau path lokasi file JSON daftar domain penanda. |
+| `VITE_BUG_LIST_URL` | `"https://raw.githubusercontent.com/.../bug_list.json"` | URL GitHub Raw CDN atau path lokasi file JSON daftar Bug Host / SNI. |
 | `VITE_API_CHECK_URL` | `"/api/check?ips="` | Endpoint API internal (self-hosted Bun checker) atau eksternal untuk mengecek latensi & status hidup proxy. |
 | `VITE_PATH_TEMPLATE` | `"/{ip}-{port}"` | Format template path WebSocket/HTTPUpgrade yang dihasilkan. |
 

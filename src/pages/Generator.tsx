@@ -63,28 +63,38 @@ const Generator: React.FC = () => {
     setFormPassword(generateUUID());
     loadProxies(CONFIG.proxyListUrl);
 
-    fetch(CONFIG.domainListUrl)
-      .then(res => res.json())
-      .then(data => {
+    const fetchDomains = async () => {
+      try {
+        let res = await fetch(CONFIG.domainListUrl);
+        if (!res.ok && CONFIG.domainListUrl !== "/domain.json") {
+          res = await fetch("/domain.json");
+        }
+        const data = await res.json();
         if (Array.isArray(data) && data.length > 0 && mountedRef.current) {
           setMainDomains(data);
           setFormDomain(data[Math.floor(Math.random() * data.length)]);
         }
-      })
-      .catch(() => {
+      } catch {
         // Fallback ke MAIN_DOMAINS bawaan jika gagal memuat
-      });
+      }
+    };
+    fetchDomains();
 
-    fetch(CONFIG.bugListUrl)
-      .then(res => res.json())
-      .then(data => {
+    const fetchBugs = async () => {
+      try {
+        let res = await fetch(CONFIG.bugListUrl);
+        if (!res.ok && CONFIG.bugListUrl !== "/bug_list.json") {
+          res = await fetch("/bug_list.json");
+        }
+        const data = await res.json();
         if (Array.isArray(data) && data.length > 0 && mountedRef.current) {
           setBugList(data);
         }
-      })
-      .catch(() => {
+      } catch {
         // Fallback ke BUG_LIST bawaan jika gagal memuat
-      });
+      }
+    };
+    fetchBugs();
 
     return () => { mountedRef.current = false; };
   }, []);
@@ -189,7 +199,10 @@ const Generator: React.FC = () => {
     setIsLoadingList(true);
     setProxyStatusMap({});
     try {
-      const res = await fetch(url);
+      let res = await fetch(url);
+      if (!res.ok && url !== "/proxyip.json") {
+        res = await fetch("/proxyip.json");
+      }
       if (!res.ok) throw new Error("Failed to load");
       const text = await res.text();
       
@@ -441,7 +454,7 @@ const Generator: React.FC = () => {
                                         'bg-slate-800 border-slate-700 text-slate-500'
                                      }`}>
                                         {statusInfo.status === 'loading' && <><i className="fas fa-circle-notch fa-spin text-[8px]"></i> Check</>}
-                                        {statusInfo.status === 'active' && <><i className="fas fa-wifi text-[8px]"></i> {statusInfo.latency}</>}
+                                        {statusInfo.status === 'active' && <><i className="fas fa-wifi text-[8px]"></i> {statusInfo.latency} ms</>}
                                         {statusInfo.status === 'dead' && <span>DEAD</span>}
                                         {statusInfo.status === 'unknown' && <span>WAIT</span>}
                                      </div>
@@ -517,7 +530,7 @@ const Generator: React.FC = () => {
                          <div className="text-[10px] text-slate-500 mb-1">Live Status</div>
                          <div>
                              {currentStatus.status === 'loading' && <span className="text-xs text-yellow-500 font-bold"><i className="fas fa-spinner fa-spin mr-1"></i> Checking</span>}
-                             {currentStatus.status === 'active' && <span className="text-xs text-emerald-400 font-bold"><i className="fas fa-check-circle mr-1"></i> Active ({currentStatus.latency})</span>}
+                             {currentStatus.status === 'active' && <span className="text-xs text-emerald-400 font-bold"><i className="fas fa-check-circle mr-1"></i> Active ({currentStatus.latency} ms)</span>}
                              {currentStatus.status === 'dead' && <span className="text-xs text-rose-400 font-bold"><i className="fas fa-times-circle mr-1"></i> Dead</span>}
                              {currentStatus.status === 'unknown' && <span className="text-xs text-slate-500 font-bold">Waiting Check...</span>}
                          </div>
