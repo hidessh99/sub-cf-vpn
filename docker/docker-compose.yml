@@ -16,10 +16,6 @@ services:
       - lufeng-checker
     ports:
       - ${HOST_IP}:${WEB_HTTP_PORT}:4001
-    volumes:
-      - ${APP_PATH}/domain.json:/usr/share/nginx/html/domain.json:ro
-      - ${APP_PATH}/bug_list.json:/usr/share/nginx/html/bug_list.json:ro
-      - ${APP_PATH}/proxyip.json:/usr/share/nginx/html/proxyip.json:ro
     labels:
       createdBy: "bt_apps"
     networks:
@@ -39,6 +35,12 @@ services:
     restart: always
     expose:
       - "4002"
+    volumes:
+      - ${APP_PATH}/data:/app/data
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     labels:
       createdBy: "bt_apps"
     networks:

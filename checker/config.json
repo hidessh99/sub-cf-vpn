@@ -1,0 +1,14 @@
+{
+  "port": 4002,
+  "jwt": {
+    "secret": "UrsiK5IYUQ9tLY8Ob3Betn7UNuqjMZQBZ0dQhOLovL5",
+    "expiresIn": "24h"
+  },
+  "admin": {
+    "username": "admin",
+    "password": "hidessh123"
+  },
+  "cronCheck": {
+    "enabled": false
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "port": 4002,
+  "jwt": {
+    "secret": "YOUR_JWT_SECRET_KEY_MIN_32_CHARS",
+    "expiresIn": "24h"
+  },
+  "admin": {
+    "username": "admin",
+    "password": "CHANGE_THIS_PASSWORD"
+  },
+  "cronCheck": {
+    "enabled": false
+  }
+}

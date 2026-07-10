@@ -13,6 +13,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/api/v1': {
+        target: 'http://localhost:4002',
+        changeOrigin: true,
+      },
       '/api/check': {
         target: 'http://localhost:4002',
         changeOrigin: true,
