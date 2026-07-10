@@ -44,7 +44,8 @@ Saat ini, data konfigurasi frontend (`proxyip.json`, `domain.json`, `bug_list.js
 checker/
 ├── index.ts                     # Entry point, server bootstrap
 ├── package.json                 # Dependencies (tambah jose)
-├── .env.example                 # Environment variables template
+├── config.json                  # Local configuration with secrets (git ignored)
+├── config.example.json          # Configuration template
 ├── PRD.md                       # Dokumen ini
 ├── Dockerfile                   # Docker config
 ├── database/
@@ -397,13 +398,19 @@ Semua repository menggunakan `bun:sqlite` prepared statements untuk keamanan & p
 }
 ```
 
-##### [NEW] .env.example
-```env
-PORT=4002
-JWT_SECRET=your-super-secret-key-change-this
-JWT_EXPIRES_IN=24h
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123
+##### [NEW] config.example.json
+```json
+{
+  "port": 4002,
+  "jwt": {
+    "secret": "generate-a-secure-random-secret-key-32-chars-minimum",
+    "expiresIn": "24h"
+  },
+  "admin": {
+    "username": "admin",
+    "password": "admin123"
+  }
+}
 ```
 
 ---
