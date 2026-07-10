@@ -3,6 +3,7 @@ import { ProxyController } from "../controllers/ProxyController";
 import { DomainController } from "../controllers/DomainController";
 import { BugController } from "../controllers/BugController";
 import { DashboardController } from "../controllers/DashboardController";
+import { SystemController } from "../controllers/SystemController";
 import { authenticateRequest } from "../middlewares/authMiddleware";
 import { errorResponse, corsResponse } from "../utils/response";
 
@@ -11,6 +12,7 @@ const proxyController = new ProxyController();
 const domainController = new DomainController();
 const bugController = new BugController();
 const dashboardController = new DashboardController();
+const systemController = new SystemController();
 
 export async function handleApiRoute(request: Request): Promise<Response> {
   const url = new URL(request.url);
@@ -34,6 +36,14 @@ export async function handleApiRoute(request: Request): Promise<Response> {
   }
   if (pathname === "/api/v1/auth/password" && method === "PUT") {
     return authController.changePassword(request, admin);
+  }
+
+  // --- System & Checker Routes ---
+  if ((pathname === "/health" || pathname === "/") && method === "GET") {
+    return systemController.healthCheck();
+  }
+  if (pathname.startsWith("/api/check") && method === "GET") {
+    return proxyController.checkProxies(request);
   }
 
   // --- Public Configuration Routes ---

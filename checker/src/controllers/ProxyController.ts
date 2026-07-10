@@ -3,6 +3,7 @@ import { successResponse, errorResponse, paginatedResponse, jsonResponse } from 
 import { AuthContext } from "../middlewares/authMiddleware";
 import { CreateProxyRequest, UpdateProxyRequest, ImportProxyItem } from "../dto/proxy.dto";
 import { runHealthCheck } from "../cron/proxyHealthCheck";
+import { checkProxy } from "../utils/checkProxy";
 
 export class ProxyController {
   private proxyUseCase = new ProxyUseCase();
@@ -104,5 +105,35 @@ export class ProxyController {
     } catch (e: any) {
       return errorResponse(e.message || "Failed to start health check", 400);
     }
+  }
+
+  async checkProxies(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    let ipsString = url.searchParams.get('ips') || url.searchParams.get('ip') || '';
+    if (!ipsString && url.pathname.startsWith('/api/check/')) {
+      ipsString = decodeURIComponent(url.pathname.replace('/api/check/', ''));
+    }
+
+    if (!ipsString) {
+      return jsonResponse([]);
+    }
+
+    const list = ipsString.split(',').map(item => item.trim()).filter(Boolean);
+    const tasks = list.map(item => {
+      const parts = item.split(':');
+      const ip = parts[0];
+      const port = parseInt(parts[1] || '443', 10);
+      return checkProxy(ip, port, 2500);
+    });
+
+    const results = await Promise.all(tasks);
+    return new Response(JSON.stringify(results), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      }
+    });
   }
 }
