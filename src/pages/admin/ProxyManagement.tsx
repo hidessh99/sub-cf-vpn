@@ -3,6 +3,7 @@ import { adminFetch } from '../../utils/adminApi';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { PaginatedResponse } from '../../types/admin';
+import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
 
 interface ProxyIP {
   id: number;
@@ -36,6 +37,8 @@ export const ProxyManagement: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingProxy, setEditingProxy] = useState<ProxyIP | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [proxyToDelete, setProxyToDelete] = useState<number | null>(null);
 
   // Form inputs
   const [formData, setFormData] = useState({
@@ -173,10 +176,15 @@ export const ProxyManagement: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this proxy?')) return;
+  const initiateDelete = (id: number) => {
+    setProxyToDelete(id);
+    setShowConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (proxyToDelete === null) return;
     try {
-      const response = await adminFetch(`/api/v1/proxies/${id}`, {
+      const response = await adminFetch(`/api/v1/proxies/${proxyToDelete}`, {
         method: 'DELETE'
       });
       if (response.success) {
@@ -185,6 +193,9 @@ export const ProxyManagement: React.FC = () => {
       }
     } catch (err: any) {
       showToast(err.message || 'Failed to delete proxy', 'error');
+    } finally {
+      setShowConfirm(false);
+      setProxyToDelete(null);
     }
   };
 
@@ -314,7 +325,7 @@ export const ProxyManagement: React.FC = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(p.id)}
+                          onClick={() => initiateDelete(p.id)}
                           className="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-150"
                         >
                           Delete
@@ -601,6 +612,19 @@ export const ProxyManagement: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Delete Proxy Configuration?"
+        message="Are you sure you want to delete this proxy? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => {
+          setShowConfirm(false);
+          setProxyToDelete(null);
+        }}
+      />
     </AdminLayout>
   );
 };

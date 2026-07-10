@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { adminFetch } from '../../utils/adminApi';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
+import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
 
 interface Bug {
   id: number;
@@ -16,6 +17,9 @@ export const BugManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const { showToast } = useToast();
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [bugToDelete, setBugToDelete] = useState<number | null>(null);
 
   const fetchBugs = async () => {
     setLoading(true);
@@ -58,11 +62,16 @@ export const BugManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteBug = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this bug hostname?')) return;
+  const initiateDelete = (id: number) => {
+    setBugToDelete(id);
+    setShowConfirm(true);
+  };
+
+  const handleDeleteBug = async () => {
+    if (bugToDelete === null) return;
 
     try {
-      const response = await adminFetch(`/api/v1/bugs/${id}`, {
+      const response = await adminFetch(`/api/v1/bugs/${bugToDelete}`, {
         method: 'DELETE',
       });
 
@@ -72,6 +81,9 @@ export const BugManagement: React.FC = () => {
       }
     } catch (err: any) {
       showToast(err.message || 'Failed to delete bug hostname', 'error');
+    } finally {
+      setShowConfirm(false);
+      setBugToDelete(null);
     }
   };
 
@@ -140,7 +152,7 @@ export const BugManagement: React.FC = () => {
                     <td className="px-6 py-4 text-slate-400">{b.created_at}</td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => handleDeleteBug(b.id)}
+                        onClick={() => initiateDelete(b.id)}
                         className="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-150"
                       >
                         Delete
@@ -153,6 +165,19 @@ export const BugManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Delete Bug Hostname?"
+        message="Are you sure you want to delete this bug hostname? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteBug}
+        onCancel={() => {
+          setShowConfirm(false);
+          setBugToDelete(null);
+        }}
+      />
     </AdminLayout>
   );
 };

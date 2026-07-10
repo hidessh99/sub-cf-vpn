@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { adminFetch } from '../../utils/adminApi';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
+import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
 
 interface Domain {
   id: number;
@@ -16,6 +17,9 @@ export const DomainManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const { showToast } = useToast();
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [domainToDelete, setDomainToDelete] = useState<number | null>(null);
 
   const fetchDomains = async () => {
     setLoading(true);
@@ -58,11 +62,16 @@ export const DomainManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteDomain = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this domain?')) return;
+  const initiateDelete = (id: number) => {
+    setDomainToDelete(id);
+    setShowConfirm(true);
+  };
+
+  const handleDeleteDomain = async () => {
+    if (domainToDelete === null) return;
 
     try {
-      const response = await adminFetch(`/api/v1/domains/${id}`, {
+      const response = await adminFetch(`/api/v1/domains/${domainToDelete}`, {
         method: 'DELETE',
       });
 
@@ -72,6 +81,9 @@ export const DomainManagement: React.FC = () => {
       }
     } catch (err: any) {
       showToast(err.message || 'Failed to delete domain', 'error');
+    } finally {
+      setShowConfirm(false);
+      setDomainToDelete(null);
     }
   };
 
@@ -140,7 +152,7 @@ export const DomainManagement: React.FC = () => {
                     <td className="px-6 py-4 text-slate-400">{d.created_at}</td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => handleDeleteDomain(d.id)}
+                        onClick={() => initiateDelete(d.id)}
                         className="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-150"
                       >
                         Delete
@@ -153,6 +165,19 @@ export const DomainManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Delete Domain?"
+        message="Are you sure you want to delete this domain? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteDomain}
+        onCancel={() => {
+          setShowConfirm(false);
+          setDomainToDelete(null);
+        }}
+      />
     </AdminLayout>
   );
 };
