@@ -102,11 +102,12 @@ export class ProxyRepository {
         } else if (key === "is_active") {
           value = p.is_active ? 1 : 0;
         } else if (key === "asn") {
-          value = p.asn;
+          value = p.asn !== undefined ? p.asn : null;
         } else if (key === "latency") {
           value = p.latency !== undefined ? Number(p.latency) : 0;
         } else {
-          value = p[key] as string | null;
+          const val = p[key];
+          value = val !== undefined ? (val as string | null) : null;
         }
 
         fields.push(`${key} = $${key}`);
@@ -211,5 +212,17 @@ export class ProxyRepository {
       created_at: r.created_at,
       updated_at: r.updated_at,
     };
+  }
+
+  findAllActive(): ProxyIP[] {
+    const rows = db.query("SELECT * FROM proxies WHERE is_active = 1").all() as ProxyRow[];
+    return rows.map(r => this.mapRowToModel(r));
+  }
+
+  bulkDelete(ids: number[]): number {
+    if (ids.length === 0) return 0;
+    const placeholders = ids.map(() => '?').join(',');
+    db.query(`DELETE FROM proxies WHERE id IN (${placeholders})`).run(...ids);
+    return ids.length;
   }
 }

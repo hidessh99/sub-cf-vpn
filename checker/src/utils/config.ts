@@ -10,6 +10,12 @@ export interface AppConfig {
     username: string;
     password: string;
   };
+  cronCheck?: {
+    enabled?: boolean;
+    intervalHours?: number;
+    batchSize?: number;
+    timeoutMs?: number;
+  };
 }
 
 const configPath = join(import.meta.dir, "..", "..", "config.json");
@@ -34,6 +40,12 @@ try {
     admin: {
       username: process.env.ADMIN_USERNAME || "admin",
       password: process.env.ADMIN_PASSWORD || "admin123"
+    },
+    cronCheck: {
+      enabled: true,
+      intervalHours: 24,
+      batchSize: 20,
+      timeoutMs: 3000
     }
   };
 }

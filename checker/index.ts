@@ -1,7 +1,8 @@
-import net from 'node:net';
 import { seed } from './database/seed';
 import { handleApiRoute } from './src/routes';
 import { config } from "./src/utils/config";
+import { checkProxy, CheckResult } from './src/utils/checkProxy';
+import { startProxyHealthCron } from './src/cron/proxyHealthCheck';
 
 // Run database init and seed on startup
 try {
@@ -10,42 +11,6 @@ try {
   console.log("⚙️  [System] Seeding complete.");
 } catch (e) {
   console.error("⚠️  [System] Failed to seed database:", e);
-}
-
-interface CheckResult {
-  ip: string;
-  port: number;
-  proxyip: boolean;
-  latency: number;
-}
-
-async function checkProxy(ip: string, port: number, timeoutMs = 2500): Promise<CheckResult> {
-  return new Promise((resolve) => {
-    const start = performance.now();
-    let settled = false;
-
-    const finish = (proxyip: boolean) => {
-      if (settled) return;
-      settled = true;
-      socket.destroy();
-      const latency = proxyip ? Math.floor(performance.now() - start) : 0;
-      resolve({ ip, port, proxyip, latency });
-    };
-
-    const socket = net.createConnection({ host: ip, port: port, timeout: timeoutMs });
-
-    socket.on('connect', () => {
-      finish(true);
-    });
-
-    socket.on('timeout', () => {
-      finish(false);
-    });
-
-    socket.on('error', () => {
-      finish(false);
-    });
-  });
 }
 
 const PORT = config.port;
@@ -113,4 +78,8 @@ const server = Bun.serve({
 });
 
 console.log(`🚀 [LuFeng Checker] Service running on http://0.0.0.0:${server.port}`);
+
+// Start the health check cron job
+startProxyHealthCron();
+
 export default server;
