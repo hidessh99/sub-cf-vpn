@@ -1,0 +1,52 @@
+import { db } from "../../database/database";
+import { Domain } from "../models/Domain";
+import { DomainRow } from "../entities/DomainEntity";
+import { CountRow, IdRow } from "../entities/CommonEntity";
+
+export class DomainRepository {
+  findAll(): Domain[] {
+    const rows = db.query("SELECT * FROM domains ORDER BY id DESC").all() as DomainRow[];
+    return rows.map((r) => ({
+      id: r.id,
+      domain: r.domain,
+      is_active: r.is_active === 1,
+      created_at: r.created_at,
+    }));
+  }
+
+  findByDomain(domain: string): Domain | null {
+    const row = db.query("SELECT * FROM domains WHERE domain = ? LIMIT 1").get(domain) as DomainRow | null;
+    if (!row) return null;
+    return {
+      id: row.id,
+      domain: row.domain,
+      is_active: row.is_active === 1,
+      created_at: row.created_at,
+    };
+  }
+
+  create(domain: string): Domain {
+    const result = db.prepare("INSERT INTO domains (domain, is_active) VALUES (?, 1) RETURNING id").get(domain) as IdRow;
+    const row = db.query("SELECT * FROM domains WHERE id = ?").get(result.id) as DomainRow;
+    return {
+      id: row.id,
+      domain: row.domain,
+      is_active: row.is_active === 1,
+      created_at: row.created_at,
+    };
+  }
+
+  delete(id: number): void {
+    db.query("DELETE FROM domains WHERE id = ?").run(id);
+  }
+
+  getPublicList(): string[] {
+    const rows = db.query("SELECT domain FROM domains WHERE is_active = 1").all() as { domain: string }[];
+    return rows.map((r) => r.domain);
+  }
+
+  count(): number {
+    const result = db.query("SELECT COUNT(*) as count FROM domains").get() as CountRow;
+    return result.count;
+  }
+}

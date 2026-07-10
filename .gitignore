@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+checker/data/*.db
+checker/data/*.db-wal
+checker/data/*.db-shm
+.env
+.env.local
+

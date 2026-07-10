@@ -39,6 +39,12 @@ services:
     restart: always
     expose:
       - "4002"
+    volumes:
+      - ${APP_PATH}/data:/app/data
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     labels:
       createdBy: "bt_apps"
     networks:
