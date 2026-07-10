@@ -39,6 +39,7 @@ export const ProxyManagement: React.FC = () => {
   const [editingProxy, setEditingProxy] = useState<ProxyIP | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [proxyToDelete, setProxyToDelete] = useState<number | null>(null);
+  const [syncingHealth, setSyncingHealth] = useState(false);
 
   // Form inputs
   const [formData, setFormData] = useState({
@@ -218,6 +219,25 @@ export const ProxyManagement: React.FC = () => {
     }
   };
 
+  const handleSyncHealth = async () => {
+    setSyncingHealth(true);
+    try {
+      const response = await adminFetch('/api/v1/proxies/sync-health', {
+        method: 'POST'
+      });
+      if (response.success) {
+        showToast(response.message || 'Proxy health check started in the background', 'success');
+        setTimeout(() => {
+          fetchProxies();
+        }, 3000);
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to trigger proxy health check', 'error');
+    } finally {
+      setSyncingHealth(false);
+    }
+  };
+
   const totalPages = Math.ceil(total / limit);
 
   return (
@@ -229,10 +249,32 @@ export const ProxyManagement: React.FC = () => {
             <h2 className="text-2xl font-bold text-white tracking-tight">Proxy IP Management</h2>
             <p className="text-slate-400 text-sm mt-1">Total {total} configurations registered</p>
           </div>
-          <div className="flex gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+            <button
+              onClick={handleSyncHealth}
+              disabled={syncingHealth}
+              className="flex-grow sm:flex-initial px-4 py-2.5 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none text-xs font-semibold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1.5"
+            >
+              {syncingHealth ? (
+                <>
+                  <svg className="animate-spin h-3.5 w-3.5 text-current" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0114 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                  </svg>
+                  Clean Dead Proxies
+                </>
+              )}
+            </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold tracking-wider uppercase transition-all duration-200"
+              className="flex-grow sm:flex-initial px-4 py-2.5 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold tracking-wider uppercase transition-all duration-200"
             >
               Import JSON
             </button>

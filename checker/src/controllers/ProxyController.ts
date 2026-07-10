@@ -2,6 +2,7 @@ import { ProxyUseCase } from "../usecases/ProxyUseCase";
 import { successResponse, errorResponse, paginatedResponse, jsonResponse } from "../utils/response";
 import { AuthContext } from "../middlewares/authMiddleware";
 import { CreateProxyRequest, UpdateProxyRequest, ImportProxyItem } from "../dto/proxy.dto";
+import { runHealthCheck } from "../cron/proxyHealthCheck";
 
 export class ProxyController {
   private proxyUseCase = new ProxyUseCase();
@@ -90,6 +91,18 @@ export class ProxyController {
       return jsonResponse(list);
     } catch (e: any) {
       return errorResponse("Failed to fetch public grouped proxies", 500);
+    }
+  }
+
+  async syncHealth(admin: AuthContext | null): Promise<Response> {
+    if (!admin) return errorResponse("Unauthorized", 401);
+
+    try {
+      // Trigger the health check cycle in the background
+      runHealthCheck();
+      return successResponse(null, "Proxy health check started in the background");
+    } catch (e: any) {
+      return errorResponse(e.message || "Failed to start health check", 400);
     }
   }
 }

@@ -60,6 +60,9 @@ export async function handleApiRoute(request: Request): Promise<Response> {
   if (pathname === "/api/v1/proxies/import" && method === "POST") {
     return proxyController.importProxies(request, admin);
   }
+  if (pathname === "/api/v1/proxies/sync-health" && method === "POST") {
+    return proxyController.syncHealth(admin);
+  }
   const proxyIdMatch = pathname.match(/^\/api\/v1\/proxies\/(\d+)$/);
   if (proxyIdMatch) {
     const id = parseInt(proxyIdMatch[1], 10);
