@@ -91,6 +91,9 @@ export async function handleApiRoute(request: Request): Promise<Response> {
   if (pathname === "/api/v1/domains" && method === "POST") {
     return domainController.createDomain(request, admin);
   }
+  if (pathname === "/api/v1/domains/import" && method === "POST") {
+    return domainController.importDomains(request, admin);
+  }
   const domainIdMatch = pathname.match(/^\/api\/v1\/domains\/(\d+)$/);
   if (domainIdMatch && method === "DELETE") {
     const id = parseInt(domainIdMatch[1], 10);
@@ -103,6 +106,9 @@ export async function handleApiRoute(request: Request): Promise<Response> {
   }
   if (pathname === "/api/v1/bugs" && method === "POST") {
     return bugController.createBug(request, admin);
+  }
+  if (pathname === "/api/v1/bugs/import" && method === "POST") {
+    return bugController.importBugs(request, admin);
   }
   const bugIdMatch = pathname.match(/^\/api\/v1\/bugs\/(\d+)$/);
   if (bugIdMatch && method === "DELETE") {

@@ -55,4 +55,17 @@ export class BugController {
       return errorResponse("Failed to fetch public bugs", 500);
     }
   }
+
+  async importBugs(request: Request, admin: AuthContext | null): Promise<Response> {
+    if (!admin) return errorResponse("Unauthorized", 401);
+
+    try {
+      const body = await request.json();
+      const list = (Array.isArray(body) ? body : [body]) as string[];
+      const count = this.bugUseCase.importFromJSON(list);
+      return successResponse({ imported: count }, `Successfully imported ${count} bug hostnames`);
+    } catch (e: any) {
+      return errorResponse(e.message || "Failed to import bugs", 400);
+    }
+  }
 }

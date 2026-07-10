@@ -40,6 +40,22 @@ export class DomainRepository {
     db.query("DELETE FROM domains WHERE id = ?").run(id);
   }
 
+  bulkCreate(domains: string[]): number {
+    const insertDomain = db.prepare("INSERT OR IGNORE INTO domains (domain, is_active) VALUES (?, 1)");
+    let count = 0;
+    const transaction = db.transaction((list: string[]) => {
+      for (const d of list) {
+        const clean = d.trim().toLowerCase();
+        if (clean) {
+          insertDomain.run(clean);
+          count++;
+        }
+      }
+    });
+    transaction(domains);
+    return count;
+  }
+
   getPublicList(): string[] {
     const rows = db.query("SELECT domain FROM domains WHERE is_active = 1").all() as { domain: string }[];
     return rows.map((r) => r.domain);

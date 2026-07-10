@@ -55,4 +55,17 @@ export class DomainController {
       return errorResponse("Failed to fetch public domains", 500);
     }
   }
+
+  async importDomains(request: Request, admin: AuthContext | null): Promise<Response> {
+    if (!admin) return errorResponse("Unauthorized", 401);
+
+    try {
+      const body = await request.json();
+      const list = (Array.isArray(body) ? body : [body]) as string[];
+      const count = this.domainUseCase.importFromJSON(list);
+      return successResponse({ imported: count }, `Successfully imported ${count} domains`);
+    } catch (e: any) {
+      return errorResponse(e.message || "Failed to import domains", 400);
+    }
+  }
 }

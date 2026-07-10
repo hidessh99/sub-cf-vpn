@@ -20,6 +20,8 @@ export const DomainManagement: React.FC = () => {
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [domainToDelete, setDomainToDelete] = useState<number | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importJson, setImportJson] = useState('');
 
   const fetchDomains = async () => {
     setLoading(true);
@@ -87,12 +89,39 @@ export const DomainManagement: React.FC = () => {
     }
   };
 
+  const handleImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const parsed = JSON.parse(importJson);
+      const response = await adminFetch('/api/v1/domains/import', {
+        method: 'POST',
+        body: JSON.stringify(parsed)
+      });
+      if (response.success) {
+        showToast(response.message || 'Domains imported successfully', 'success');
+        setShowImportModal(false);
+        setImportJson('');
+        fetchDomains();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Invalid JSON format or import failed', 'error');
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="flex flex-col gap-6 w-full max-w-4xl">
-        <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Domain Management</h2>
-          <p className="text-slate-400 text-sm mt-1">Manage domains that are allowed in configurations</p>
+        <div className="flex justify-between items-center w-full">
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">Domain Management</h2>
+            <p className="text-slate-400 text-sm mt-1">Manage domains that are allowed in configurations</p>
+          </div>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="px-4 py-2.5 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold tracking-wider uppercase transition-all duration-200"
+          >
+            Import JSON
+          </button>
         </div>
 
         {/* Add Domain Form */}
@@ -178,6 +207,52 @@ export const DomainManagement: React.FC = () => {
           setDomainToDelete(null);
         }}
       />
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg p-6 rounded-3xl gento-card backdrop-blur-2xl border border-white/10 shadow-2xl flex flex-col gap-5 max-h-[90vh] overflow-y-auto animate-fade-in">
+            <div className="flex justify-between items-center pb-3 border-b border-white/5">
+              <h3 className="text-lg font-bold text-white">Import Domains JSON</h3>
+              <button onClick={() => setShowImportModal(false)} className="text-slate-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleImport} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">JSON Data (Array of strings)</label>
+                <textarea
+                  rows={8}
+                  value={importJson}
+                  onChange={(e) => setImportJson(e.target.value)}
+                  placeholder='[\n  "example.com",\n  "test.com"\n]'
+                  className="w-full p-3 rounded-xl gento-input font-mono text-xs focus:ring-1 focus:ring-purple-500"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold uppercase"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold uppercase shadow-lg shadow-purple-500/20 hover:from-purple-500 hover:to-pink-500"
+                >
+                  Start Import
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 };

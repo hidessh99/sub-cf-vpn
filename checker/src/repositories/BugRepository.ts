@@ -40,6 +40,22 @@ export class BugRepository {
     db.query("DELETE FROM bugs WHERE id = ?").run(id);
   }
 
+  bulkCreate(bugs: string[]): number {
+    const insertBug = db.prepare("INSERT OR IGNORE INTO bugs (hostname, is_active) VALUES (?, 1)");
+    let count = 0;
+    const transaction = db.transaction((list: string[]) => {
+      for (const b of list) {
+        const clean = b.trim().toLowerCase();
+        if (clean) {
+          insertBug.run(clean);
+          count++;
+        }
+      }
+    });
+    transaction(bugs);
+    return count;
+  }
+
   getPublicList(): string[] {
     const rows = db.query("SELECT hostname FROM bugs WHERE is_active = 1").all() as { hostname: string }[];
     return rows.map((r) => r.hostname);
