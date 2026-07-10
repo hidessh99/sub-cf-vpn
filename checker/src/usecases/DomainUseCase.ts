@@ -28,4 +28,11 @@ export class DomainUseCase {
   getPublicDomainList(): string[] {
     return this.domainRepo.getPublicList();
   }
+
+  importFromJSON(list: string[]): number {
+    if (!Array.isArray(list)) {
+      throw new Error("Import data must be a JSON array of strings");
+    }
+    return this.domainRepo.bulkCreate(list);
+  }
 }

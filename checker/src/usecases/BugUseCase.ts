@@ -28,4 +28,11 @@ export class BugUseCase {
   getPublicBugList(): string[] {
     return this.bugRepo.getPublicList();
   }
+
+  importFromJSON(list: string[]): number {
+    if (!Array.isArray(list)) {
+      throw new Error("Import data must be a JSON array of strings");
+    }
+    return this.bugRepo.bulkCreate(list);
+  }
 }
