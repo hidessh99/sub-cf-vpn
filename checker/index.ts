@@ -1,7 +1,6 @@
 import { seed } from './database/seed';
 import { handleApiRoute } from './src/routes';
 import { config } from "./src/utils/config";
-import { startProxyHealthCron } from './src/cron/proxyHealthCheck';
 
 // Run database init and seed on startup
 try {
@@ -23,8 +22,5 @@ const server = Bun.serve({
 });
 
 console.log(`🚀 [LuFeng Checker] Service running on http://0.0.0.0:${server.port}`);
-
-// Start the health check cron job
-startProxyHealthCron();
 
 export default server;

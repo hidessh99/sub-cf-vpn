@@ -42,7 +42,7 @@ try {
       password: process.env.ADMIN_PASSWORD || "admin123"
     },
     cronCheck: {
-      enabled: true,
+      enabled: false,
       intervalHours: 24,
       batchSize: 20,
       timeoutMs: 3000
