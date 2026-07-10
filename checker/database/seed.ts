@@ -18,7 +18,7 @@ export async function seed() {
     });
 
     db.query("INSERT INTO admins (username, password) VALUES (?, ?)").run(username, passwordHash);
-    console.log(`👤 [Seed] Created default admin user: '${username}'`);
+    console.log("👤 [Seed] Created default admin user.");
   }
 
   // 2. Import existing public/proxyip.json
