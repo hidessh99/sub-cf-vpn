@@ -1,7 +1,6 @@
 import { seed } from './database/seed';
 import { handleApiRoute } from './src/routes';
 import { config } from "./src/utils/config";
-import { checkProxy, CheckResult } from './src/utils/checkProxy';
 import { startProxyHealthCron } from './src/cron/proxyHealthCheck';
 
 // Run database init and seed on startup
