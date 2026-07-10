@@ -83,4 +83,13 @@ export class ProxyController {
       return errorResponse("Failed to fetch public proxies", 500);
     }
   }
+
+  async PublicProxi(): Promise<Response> {
+    try {
+      const list = this.proxyUseCase.getPublicProxyListGrouped();
+      return jsonResponse(list);
+    } catch (e: any) {
+      return errorResponse("Failed to fetch public grouped proxies", 500);
+    }
+  }
 }

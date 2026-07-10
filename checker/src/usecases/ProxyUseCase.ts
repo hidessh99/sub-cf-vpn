@@ -108,4 +108,18 @@ export class ProxyUseCase {
   getPublicProxyList(): PublicProxyItem[] {
     return this.proxyRepo.getPublicList();
   }
+
+  getPublicProxyListGrouped(): Record<string, string[]> {
+    const list = this.proxyRepo.getPublicList();
+    const grouped: Record<string, string[]> = {};
+    for (const item of list) {
+      const country = (item.country || "UNK").toUpperCase();
+      if (!grouped[country]) {
+        grouped[country] = [];
+      }
+      const proxyStr = `${item.proxy}:${item.port}`;
+      grouped[country].push(proxyStr);
+    }
+    return grouped;
+  }
 }

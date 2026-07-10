@@ -40,6 +40,9 @@ export async function handleApiRoute(request: Request): Promise<Response> {
   if (pathname === "/api/v1/public/proxies" && method === "GET") {
     return proxyController.getPublicProxies();
   }
+  if (pathname === "/api/v1/public/proxies/grouped" && method === "GET") {
+    return proxyController.PublicProxi();
+  }
   if (pathname === "/api/v1/public/domains" && method === "GET") {
     return domainController.getPublicDomains();
   }
