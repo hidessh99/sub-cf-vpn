@@ -14,6 +14,10 @@ COPY . .
 # Expose checker port
 EXPOSE 4002
 
+# Environment variables
+ENV NODE_ENV=production
+ENV PORT=4002
+
 # Volume for database persistence
 VOLUME ["/app/data"]
 

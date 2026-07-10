@@ -27,5 +27,7 @@ checker/data/*.db-wal
 checker/data/*.db-shm
 .env
 .env.local
+checker/config.json
+
 
 
