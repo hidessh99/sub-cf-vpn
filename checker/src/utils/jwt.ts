@@ -1,9 +1,10 @@
 import { SignJWT, jwtVerify } from "jose";
+import { config } from "./config";
 
-const JWT_SECRET = process.env.JWT_SECRET || "super-secret-key-change-this-in-production-12345678";
+const JWT_SECRET = config.jwt.secret;
 const secret = new TextEncoder().encode(JWT_SECRET);
 
-export async function signToken(payload: Record<string, any>, expiresIn: string = "24h"): Promise<string> {
+export async function signToken(payload: Record<string, any>, expiresIn: string = config.jwt.expiresIn): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()

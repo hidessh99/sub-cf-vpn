@@ -1,6 +1,7 @@
 import net from 'node:net';
 import { seed } from './database/seed';
 import { handleApiRoute } from './src/routes';
+import { config } from "./src/utils/config";
 
 // Run database init and seed on startup
 try {
@@ -47,7 +48,7 @@ async function checkProxy(ip: string, port: number, timeoutMs = 2500): Promise<C
   });
 }
 
-const PORT = parseInt(process.env.PORT || '4002', 10);
+const PORT = config.port;
 
 const server = Bun.serve({
   port: PORT,

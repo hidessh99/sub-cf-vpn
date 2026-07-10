@@ -1,0 +1,11 @@
+{
+  "port": 4002,
+  "jwt": {
+    "secret": "generate-a-secure-random-secret-key-32-chars-minimum",
+    "expiresIn": "24h"
+  },
+  "admin": {
+    "username": "admin",
+    "password": "admin123"
+  }
+}

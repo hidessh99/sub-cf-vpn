@@ -1,5 +1,6 @@
 import { db, initDatabase } from "./database";
 import { join } from "node:path";
+import { config } from "../src/utils/config";
 
 export async function seed() {
   // Ensure tables exist
@@ -8,8 +9,8 @@ export async function seed() {
   // 1. Seed Admin
   const adminCountResult = db.query("SELECT COUNT(*) as count FROM admins").get() as { count: number };
   if (adminCountResult.count === 0) {
-    const username = process.env.ADMIN_USERNAME || "admin";
-    const passwordPlain = process.env.ADMIN_PASSWORD || "admin123";
+    const username = config.admin.username;
+    const passwordPlain = config.admin.password;
     const passwordHash = await Bun.password.hash(passwordPlain, {
       algorithm: "argon2id",
       memoryCost: 65536,
