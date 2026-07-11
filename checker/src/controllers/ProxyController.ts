@@ -15,7 +15,7 @@ export class ProxyController {
     const country = c.req.query("country") || undefined;
     
     const isActiveParam = c.req.query("is_active");
-    const is_active = isActiveParam !== null ? isActiveParam === "true" : undefined;
+    const is_active = (isActiveParam !== undefined && isActiveParam !== null) ? isActiveParam === "true" : undefined;
 
     const result = this.proxyUseCase.getAllProxies(page, limit, { country, is_active, search });
     
