@@ -136,4 +136,21 @@ export class ProxyController {
       }
     });
   }
+
+  async geoipLookup(request: Request, admin: AuthContext | null): Promise<Response> {
+    if (!admin) return errorResponse("Unauthorized", 401);
+
+    const url = new URL(request.url);
+    const ip = url.searchParams.get("ip");
+    if (!ip) {
+      return errorResponse("IP address parameter is required", 400);
+    }
+
+    try {
+      const data = await this.proxyUseCase.lookupGeoIP(ip);
+      return successResponse(data, "GeoIP lookup successful");
+    } catch (e: any) {
+      return errorResponse(e.message || "GeoIP lookup failed", 400);
+    }
+  }
 }

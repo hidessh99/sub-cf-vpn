@@ -73,6 +73,9 @@ export async function handleApiRoute(request: Request): Promise<Response> {
   if (pathname === "/api/v1/proxies/sync-health" && method === "POST") {
     return proxyController.syncHealth(admin);
   }
+  if (pathname === "/api/v1/proxies/geoip" && method === "GET") {
+    return proxyController.geoipLookup(request, admin);
+  }
   const proxyIdMatch = pathname.match(/^\/api\/v1\/proxies\/(\d+)$/);
   if (proxyIdMatch) {
     const id = parseInt(proxyIdMatch[1], 10);
