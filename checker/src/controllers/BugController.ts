@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { BugUseCase } from "../usecases/BugUseCase";
 import { CreateBugRequest } from "../dto/bug.dto";
+import { logger } from "../utils/logger";
 
 export class BugController {
   constructor(private bugUseCase: BugUseCase) {}
@@ -26,6 +27,10 @@ export class BugController {
 
   async deleteBug(c: Context): Promise<Response> {
     const id = parseInt(c.req.param("id"), 10);
+    if (isNaN(id)) {
+      logger.warn(`deleteBug failed - invalid ID: ${c.req.param("id")}`, "BugController");
+      return c.json({ success: false, message: "Invalid ID parameter", error: null }, 400);
+    }
     this.bugUseCase.deleteBug(id);
     return c.json({
       success: true,

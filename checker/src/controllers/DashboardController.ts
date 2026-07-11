@@ -1,5 +1,6 @@
 import { Context } from "hono";
 import { IProxyRepository, IDomainRepository, IBugRepository } from "../repositories/interfaces";
+import { logger } from "../utils/logger";
 
 export class DashboardController {
   constructor(
@@ -11,6 +12,7 @@ export class DashboardController {
   async getStats(c: Context): Promise<Response> {
     const admin = c.get("admin");
     if (!admin) {
+      logger.warn("getStats attempt without authorization", "DashboardController");
       return c.json({ success: false, message: "Unauthorized", error: null }, 401);
     }
 

@@ -3,6 +3,7 @@ import { ProxyUseCase } from "../usecases/ProxyUseCase";
 import { runHealthCheck } from "../cron/proxyHealthCheck";
 import { checkProxy } from "../utils/checkProxy";
 import { CreateProxyRequest, UpdateProxyRequest, ImportProxyItem } from "../dto/proxy.dto";
+import { logger } from "../utils/logger";
 
 export class ProxyController {
   constructor(private proxyUseCase: ProxyUseCase) {}
@@ -43,6 +44,10 @@ export class ProxyController {
 
   async updateProxy(c: Context): Promise<Response> {
     const id = parseInt(c.req.param("id"), 10);
+    if (isNaN(id)) {
+      logger.warn(`updateProxy failed - invalid ID: ${c.req.param("id")}`, "ProxyController");
+      return c.json({ success: false, message: "Invalid ID parameter", error: null }, 400);
+    }
     const data = (c.req.valid as any)("json") as UpdateProxyRequest;
     const proxy = this.proxyUseCase.updateProxy(id, data);
     return c.json({
@@ -54,6 +59,10 @@ export class ProxyController {
 
   async deleteProxy(c: Context): Promise<Response> {
     const id = parseInt(c.req.param("id"), 10);
+    if (isNaN(id)) {
+      logger.warn(`deleteProxy failed - invalid ID: ${c.req.param("id")}`, "ProxyController");
+      return c.json({ success: false, message: "Invalid ID parameter", error: null }, 400);
+    }
     this.proxyUseCase.deleteProxy(id);
     return c.json({
       success: true,
@@ -101,6 +110,7 @@ export class ProxyController {
     }
 
     if (!ipsString) {
+      logger.warn("checkProxies failed - no IP address list provided", "ProxyController");
       return c.json([]);
     }
 
@@ -122,6 +132,7 @@ export class ProxyController {
   async geoipLookup(c: Context): Promise<Response> {
     const ip = c.req.query("ip");
     if (!ip) {
+      logger.warn("geoipLookup failed - IP address is missing", "ProxyController");
       return c.json({ success: false, message: "IP address parameter is required", error: null }, 400);
     }
 

@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { DomainUseCase } from "../usecases/DomainUseCase";
 import { CreateDomainRequest } from "../dto/domain.dto";
+import { logger } from "../utils/logger";
 
 export class DomainController {
   constructor(private domainUseCase: DomainUseCase) {}
@@ -26,6 +27,10 @@ export class DomainController {
 
   async deleteDomain(c: Context): Promise<Response> {
     const id = parseInt(c.req.param("id"), 10);
+    if (isNaN(id)) {
+      logger.warn(`deleteDomain failed - invalid ID: ${c.req.param("id")}`, "DomainController");
+      return c.json({ success: false, message: "Invalid ID parameter", error: null }, 400);
+    }
     this.domainUseCase.deleteDomain(id);
     return c.json({
       success: true,

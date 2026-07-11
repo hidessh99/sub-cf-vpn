@@ -3,6 +3,7 @@ import { ProxyIP } from "../models/ProxyIP";
 import { CreateProxyRequest, UpdateProxyRequest, ImportProxyItem } from "../dto/proxy.dto";
 import { PublicProxyItem } from "../dto/response.dto";
 import { ValidationError, NotFoundError } from "../utils/errors";
+import { logger } from "../utils/logger";
 
 export class ProxyUseCase {
   constructor(private proxyRepo: IProxyRepository) {}
@@ -12,7 +13,10 @@ export class ProxyUseCase {
     limit: number,
     filters: { country?: string; is_active?: boolean; search?: string } = {}
   ): { data: ProxyIP[]; total: number } {
-    return this.proxyRepo.findAll(page, limit, filters);
+    logger.debug(`Fetching proxies: page=${page}, limit=${limit}, filters=${JSON.stringify(filters)}`, "ProxyUseCase");
+    const result = this.proxyRepo.findAll(page, limit, filters);
+    logger.debug(`Fetched ${result.data.length} proxies (total=${result.total})`, "ProxyUseCase");
+    return result;
   }
 
   createProxy(data: CreateProxyRequest): ProxyIP {
@@ -20,7 +24,7 @@ export class ProxyUseCase {
     const proxyVal = data.proxy || data.ip;
     const portVal = String(data.port || "443");
 
-    return this.proxyRepo.create({
+    const proxy = this.proxyRepo.create({
       proxy: String(proxyVal),
       port: portVal,
       proxyip: data.proxyip !== undefined ? Boolean(data.proxyip) : true,
@@ -37,11 +41,14 @@ export class ProxyUseCase {
       longitude: data.longitude ? String(data.longitude) : null,
       is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
     });
+
+    return proxy;
   }
 
   updateProxy(id: number, data: UpdateProxyRequest): ProxyIP {
     const existing = this.proxyRepo.findById(id);
     if (!existing) {
+      logger.warn(`Update failed - proxy not found: id=${id}`, "ProxyUseCase");
       throw new NotFoundError("Proxy not found");
     }
 
@@ -64,12 +71,14 @@ export class ProxyUseCase {
     if (data.longitude !== undefined) payload.longitude = data.longitude ? String(data.longitude) : null;
     if (data.is_active !== undefined) payload.is_active = Boolean(data.is_active);
 
-    return this.proxyRepo.update(id, payload);
+    const proxy = this.proxyRepo.update(id, payload);
+    return proxy;
   }
 
   deleteProxy(id: number): void {
     const existing = this.proxyRepo.findById(id);
     if (!existing) {
+      logger.warn(`Delete failed - proxy not found: id=${id}`, "ProxyUseCase");
       throw new NotFoundError("Proxy not found");
     }
     this.proxyRepo.delete(id);
@@ -103,7 +112,8 @@ export class ProxyUseCase {
       };
     });
 
-    return this.proxyRepo.bulkCreate(formatted);
+    const count = this.proxyRepo.bulkCreate(formatted);
+    return count;
   }
 
   getPublicProxyList(): PublicProxyItem[] {
@@ -149,6 +159,7 @@ export class ProxyUseCase {
         }
       };
     } catch (e: any) {
+      logger.warn(`GeoIP primary provider failed for ${ip}: ${e.message}, trying fallback...`, "ProxyUseCase");
       // Fallback: try freeipapi.com
       try {
         const backupRes = await fetch(`https://freeipapi.com/api/json/${ip}`);
@@ -170,6 +181,7 @@ export class ProxyUseCase {
           }
         };
       } catch (backupErr: any) {
+        logger.error(`GeoIP lookup failed for ${ip} (both providers)`, backupErr, "ProxyUseCase");
         throw new ValidationError(e.message || "GeoIP lookup failed");
       }
     }

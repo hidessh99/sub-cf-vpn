@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { AuthUseCase } from "../usecases/AuthUseCase";
 import { LoginRequest, ChangePasswordRequest } from "../dto/auth.dto";
+import { logger } from "../utils/logger";
 
 export class AuthController {
   constructor(private authUseCase: AuthUseCase) {}
@@ -18,6 +19,7 @@ export class AuthController {
   async getProfile(c: Context): Promise<Response> {
     const admin = c.get("admin");
     if (!admin) {
+      logger.warn("getProfile attempt without authorization", "AuthController");
       return c.json({ success: false, message: "Unauthorized", error: null }, 401);
     }
 
@@ -32,6 +34,7 @@ export class AuthController {
   async changePassword(c: Context): Promise<Response> {
     const admin = c.get("admin");
     if (!admin) {
+      logger.warn("changePassword attempt without authorization", "AuthController");
       return c.json({ success: false, message: "Unauthorized", error: null }, 401);
     }
 

@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { compress } from "hono/compress";
+import { logger as honoLogger } from "hono/logger";
+import { timeout } from "hono/timeout";
+import { HTTPException } from "hono/http-exception";
 import { AppError } from "./utils/errors";
 import { logger } from "./utils/logger";
 import { HonoEnv } from "./middlewares/authMiddleware";
@@ -19,6 +22,15 @@ const app = new Hono<HonoEnv>();
 
 // Register global middlewares
 app.use("*", compress());
+app.use("*", honoLogger((message: string) => {
+  logger.info(message, "HTTP");
+}));
+
+const customTimeoutException = new HTTPException(408, {
+  message: "Request timeout. Please try again later.",
+});
+app.use("*", timeout(30000, customTimeoutException));
+
 app.use(
   "*",
   cors({
@@ -49,6 +61,17 @@ app.onError((err, c) => {
         error: null,
       },
       err.statusCode as any
+    );
+  }
+
+  if (err instanceof HTTPException) {
+    return c.json(
+      {
+        success: false,
+        message: err.message,
+        error: null,
+      },
+      err.status as any
     );
   }
 
