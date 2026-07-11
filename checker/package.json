@@ -10,6 +10,7 @@
     "@types/bun": "latest"
   },
   "dependencies": {
-    "jose": "^6.2.3"
+    "jose": "^6.2.3",
+    "zod": "^3.23.8"
   }
 }

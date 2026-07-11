@@ -19,6 +19,7 @@ import { SystemController } from "../controllers/SystemController";
 import { authenticateRequest } from "../middlewares/authMiddleware";
 import { errorResponse, corsResponse } from "../utils/response";
 import { AppError } from "../utils/errors";
+import { logger } from "../utils/logger";
 
 // ==========================================
 // 🔩 Manual Dependency Injection Bootstrap
@@ -167,7 +168,7 @@ export async function handleApiRoute(request: Request): Promise<Response> {
     }
     
     // Log unexpected errors
-    console.error("💥 [Global Error Handler]:", error);
+    logger.error("Unexpected error occurred during routing", error, "Router");
     return errorResponse(error.message || "Internal Server Error", 500);
   }
 }

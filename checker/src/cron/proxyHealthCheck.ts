@@ -1,6 +1,7 @@
 import { config } from '../utils/config';
 import { ProxyRepository } from '../repositories/ProxyRepository';
 import { checkProxy } from '../utils/checkProxy';
+import { logger } from '../utils/logger';
 
 const proxyRepo = new ProxyRepository();
 
@@ -9,16 +10,16 @@ export async function runHealthCheck() {
   const batchSize = cronConfig.batchSize || 20;
   const timeoutMs = cronConfig.timeoutMs || 3000;
 
-  console.log(`🔄 [CronCheck] Starting proxy health check cycle...`);
+  logger.info("Starting proxy health check cycle...", "CronCheck");
   
   try {
     const activeProxies = proxyRepo.findAllActive();
     if (activeProxies.length === 0) {
-      console.log(`🔄 [CronCheck] No active proxies found in database. Cycle finished.`);
+      logger.info("No active proxies found in database. Cycle finished.", "CronCheck");
       return;
     }
 
-    console.log(`🔄 [CronCheck] Found ${activeProxies.length} active proxies to check.`);
+    logger.info(`Found ${activeProxies.length} active proxies to check.`, "CronCheck");
     const deadIds: number[] = [];
     let checkedCount = 0;
 
@@ -41,21 +42,21 @@ export async function runHealthCheck() {
       await Promise.all(promises);
       checkedCount += batch.length;
       if (activeProxies.length > 50) {
-        console.log(`   [Progress] Checked ${checkedCount}/${activeProxies.length} proxies...`);
+        logger.info(`Checked ${checkedCount}/${activeProxies.length} proxies...`, "CronCheck");
       }
     }
 
     if (deadIds.length > 0) {
-      console.log(`⚠️ [CronCheck] Found ${deadIds.length} dead proxies. Removing from SQLite database...`);
+      logger.warn(`Found ${deadIds.length} dead proxies. Removing from SQLite database...`, "CronCheck");
       const deletedCount = proxyRepo.bulkDelete(deadIds);
-      console.log(`✅ [CronCheck] Successfully removed ${deletedCount} dead proxies.`);
+      logger.info(`Successfully removed ${deletedCount} dead proxies.`, "CronCheck");
     } else {
-      console.log(`✅ [CronCheck] All checked proxies are alive!`);
+      logger.info("All checked proxies are alive!", "CronCheck");
     }
 
-    console.log(`🔄 [CronCheck] Health check cycle complete. ${checkedCount} checked, ${deadIds.length} deleted, ${checkedCount - deadIds.length} alive.`);
+    logger.info(`Health check cycle complete. ${checkedCount} checked, ${deadIds.length} deleted, ${checkedCount - deadIds.length} alive.`, "CronCheck");
   } catch (err: any) {
-    console.error(`❌ [CronCheck] Error running health check cycle:`, err);
+    logger.error("Error running health check cycle", err, "CronCheck");
   }
 }
 
@@ -65,12 +66,12 @@ export function startProxyHealthCron() {
   const intervalHours = cronConfig.intervalHours || 24;
   
   if (!enabled) {
-    console.log(`⚙️  [CronCheck] Cron check is disabled in config.`);
+    logger.info("Cron check is disabled in config.", "CronCheck");
     return;
   }
 
   const intervalMs = intervalHours * 60 * 60 * 1000;
-  console.log(`⚙️  [CronCheck] Proxy health check scheduled every ${intervalHours} hours.`);
+  logger.info(`Proxy health check scheduled every ${intervalHours} hours.`, "CronCheck");
 
   // Run initial check after 5 seconds delay so service starting outputs are complete
   setTimeout(() => {

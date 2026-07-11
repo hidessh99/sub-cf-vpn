@@ -1,14 +1,15 @@
 import { seed } from './database/seed';
 import { handleApiRoute } from './src/routes';
 import { config } from "./src/utils/config";
+import { logger } from './src/utils/logger';
 
 // Run database init and seed on startup
 try {
-  console.log("⚙️  [System] Running database migrations and seeding...");
+  logger.info("Running database migrations and seeding...", "System");
   await seed();
-  console.log("⚙️  [System] Seeding complete.");
+  logger.info("Seeding complete.", "System");
 } catch (e) {
-  console.error("⚠️  [System] Failed to seed database:", e);
+  logger.error("Failed to seed database", e, "System");
 }
 
 const PORT = config.port;
@@ -21,6 +22,6 @@ const server = Bun.serve({
   }
 });
 
-console.log(`🚀 [LuFeng Checker] Service running on http://0.0.0.0:${server.port}`);
+logger.info(`Service running on http://0.0.0.0:${server.port}`, "System");
 
 export default server;

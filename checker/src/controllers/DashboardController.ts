@@ -1,6 +1,7 @@
 import { IProxyRepository, IDomainRepository, IBugRepository } from "../repositories/interfaces";
-import { successResponse, errorResponse } from "../utils/response";
+import { successResponse } from "../utils/response";
 import { AuthContext } from "../middlewares/authMiddleware";
+import { UnauthorizedError } from "../utils/errors";
 
 export class DashboardController {
   constructor(
@@ -10,20 +11,16 @@ export class DashboardController {
   ) {}
 
   async getStats(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
+    if (!admin) throw new UnauthorizedError("Unauthorized");
 
-    try {
-      const totalProxies = this.proxyRepo.count();
-      const totalDomains = this.domainRepo.count();
-      const totalBugs = this.bugRepo.count();
+    const totalProxies = this.proxyRepo.count();
+    const totalDomains = this.domainRepo.count();
+    const totalBugs = this.bugRepo.count();
 
-      return successResponse({
-        proxies: totalProxies,
-        domains: totalDomains,
-        bugs: totalBugs,
-      }, "Dashboard stats retrieved successfully");
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to retrieve stats", 400);
-    }
+    return successResponse({
+      proxies: totalProxies,
+      domains: totalDomains,
+      bugs: totalBugs,
+    }, "Dashboard stats retrieved successfully");
   }
 }

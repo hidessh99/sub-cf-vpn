@@ -1,6 +1,7 @@
 import { db, initDatabase } from "./database";
 import { join } from "node:path";
 import { config } from "../src/utils/config";
+import { logger } from "../src/utils/logger";
 
 export async function seed() {
   // Ensure tables exist
@@ -18,7 +19,7 @@ export async function seed() {
     });
 
     db.query("INSERT INTO admins (username, password) VALUES (?, ?)").run(username, passwordHash);
-    console.log("👤 [Seed] Created default admin user.");
+    logger.info("Created default admin user.", "Seed");
   }
 
   // 2. Import existing public/proxyip.json
@@ -29,7 +30,7 @@ export async function seed() {
       const file = Bun.file(path);
       if (await file.exists()) {
         const data = await file.json();
-        console.log(`📦 [Seed] Importing ${data.length} proxies from public/proxyip.json...`);
+        logger.info(`Importing ${data.length} proxies from public/proxyip.json...`, "Seed");
         
         const insertProxy = db.prepare(`
           INSERT INTO proxies (
@@ -64,10 +65,10 @@ export async function seed() {
         });
 
         transaction(data);
-        console.log(`✅ [Seed] Successfully imported proxies.`);
+        logger.info("Successfully imported proxies.", "Seed");
       }
     } catch (e) {
-      console.error("❌ [Seed] Error seeding proxies:", e);
+      logger.error("Error seeding proxies", e, "Seed");
     }
   }
 
@@ -79,7 +80,7 @@ export async function seed() {
       const file = Bun.file(path);
       if (await file.exists()) {
         const data = await file.json();
-        console.log(`📦 [Seed] Importing ${data.length} domains from public/domain.json...`);
+        logger.info(`Importing ${data.length} domains from public/domain.json...`, "Seed");
         
         const insertDomain = db.prepare(`
           INSERT INTO domains (domain, is_active) VALUES (?, 1)
@@ -92,10 +93,10 @@ export async function seed() {
         });
 
         transaction(data);
-        console.log(`✅ [Seed] Successfully imported domains.`);
+        logger.info("Successfully imported domains.", "Seed");
       }
     } catch (e) {
-      console.error("❌ [Seed] Error seeding domains:", e);
+      logger.error("Error seeding domains", e, "Seed");
     }
   }
 
@@ -107,7 +108,7 @@ export async function seed() {
       const file = Bun.file(path);
       if (await file.exists()) {
         const data = await file.json();
-        console.log(`📦 [Seed] Importing ${data.length} bugs from public/bug_list.json...`);
+        logger.info(`Importing ${data.length} bugs from public/bug_list.json...`, "Seed");
         
         const insertBug = db.prepare(`
           INSERT INTO bugs (hostname, is_active) VALUES (?, 1)
@@ -120,10 +121,10 @@ export async function seed() {
         });
 
         transaction(data);
-        console.log(`✅ [Seed] Successfully imported bugs.`);
+        logger.info("Successfully imported bugs.", "Seed");
       }
     } catch (e) {
-      console.error("❌ [Seed] Error seeding bugs:", e);
+      logger.error("Error seeding bugs", e, "Seed");
     }
   }
 }

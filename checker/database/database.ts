@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { logger } from "../src/utils/logger";
 
 const DB_DIR = join(import.meta.dir, "..", "data");
 const DB_PATH = join(DB_DIR, "admin.db");
@@ -17,6 +18,7 @@ export const db = new Database(DB_PATH, { create: true });
 // Enable WAL mode for better write performance
 db.run("PRAGMA journal_mode = WAL;");
 db.run("PRAGMA foreign_keys = ON;");
+db.run("PRAGMA busy_timeout = 5000;");
 
 // Initialize Schema
 export function initDatabase() {
@@ -75,5 +77,5 @@ export function initDatabase() {
     );
   `);
 
-  console.log("📁 [Database] SQLite initialized successfully.");
+  logger.info("SQLite initialized successfully.", "Database");
 }

@@ -1,110 +1,92 @@
 import { ProxyUseCase } from "../usecases/ProxyUseCase";
-import { successResponse, errorResponse, paginatedResponse, jsonResponse } from "../utils/response";
+import { successResponse, paginatedResponse, jsonResponse } from "../utils/response";
 import { AuthContext } from "../middlewares/authMiddleware";
-import { CreateProxyRequest, UpdateProxyRequest, ImportProxyItem } from "../dto/proxy.dto";
+import { CreateProxyRequestSchema, UpdateProxyRequestSchema, ImportProxyListSchema } from "../dto/proxy.dto";
 import { runHealthCheck } from "../cron/proxyHealthCheck";
 import { checkProxy } from "../utils/checkProxy";
+import { ValidationError, UnauthorizedError } from "../utils/errors";
 
 export class ProxyController {
   constructor(private proxyUseCase: ProxyUseCase) {}
 
   async getProxies(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
+    if (!admin) throw new UnauthorizedError("Unauthorized");
 
-    try {
-      const url = new URL(request.url);
-      const page = parseInt(url.searchParams.get("page") || "1", 10);
-      const limit = parseInt(url.searchParams.get("limit") || "10", 10);
-      const search = url.searchParams.get("search") || undefined;
-      const country = url.searchParams.get("country") || undefined;
-      
-      const isActiveParam = url.searchParams.get("is_active");
-      const is_active = isActiveParam !== null ? isActiveParam === "true" : undefined;
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get("page") || "1", 10);
+    const limit = parseInt(url.searchParams.get("limit") || "10", 10);
+    const search = url.searchParams.get("search") || undefined;
+    const country = url.searchParams.get("country") || undefined;
+    
+    const isActiveParam = url.searchParams.get("is_active");
+    const is_active = isActiveParam !== null ? isActiveParam === "true" : undefined;
 
-      const result = this.proxyUseCase.getAllProxies(page, limit, { country, is_active, search });
-      return paginatedResponse(result.data, result.total, page, limit);
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to fetch proxies", 400);
-    }
+    const result = this.proxyUseCase.getAllProxies(page, limit, { country, is_active, search });
+    return paginatedResponse(result.data, result.total, page, limit);
   }
 
   async createProxy(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
+    if (!admin) throw new UnauthorizedError("Unauthorized");
 
-    try {
-      const body = await request.json() as CreateProxyRequest;
-      const proxy = this.proxyUseCase.createProxy(body);
-      return successResponse(proxy, "Proxy created successfully", 201);
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to create proxy", 400);
+    const body = await request.json().catch(() => ({}));
+    const parsed = CreateProxyRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", ");
+      throw new ValidationError(msg);
     }
+
+    const proxy = this.proxyUseCase.createProxy(parsed.data);
+    return successResponse(proxy, "Proxy created successfully", 201);
   }
 
   async updateProxy(id: number, request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
+    if (!admin) throw new UnauthorizedError("Unauthorized");
 
-    try {
-      const body = await request.json() as UpdateProxyRequest;
-      const proxy = this.proxyUseCase.updateProxy(id, body);
-      return successResponse(proxy, "Proxy updated successfully");
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to update proxy", 400);
+    const body = await request.json().catch(() => ({}));
+    const parsed = UpdateProxyRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", ");
+      throw new ValidationError(msg);
     }
+
+    const proxy = this.proxyUseCase.updateProxy(id, parsed.data);
+    return successResponse(proxy, "Proxy updated successfully");
   }
 
   async deleteProxy(id: number, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
-
-    try {
-      this.proxyUseCase.deleteProxy(id);
-      return successResponse(null, "Proxy deleted successfully");
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to delete proxy", 400);
-    }
+    if (!admin) throw new UnauthorizedError("Unauthorized");
+    this.proxyUseCase.deleteProxy(id);
+    return successResponse(null, "Proxy deleted successfully");
   }
 
   async importProxies(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
+    if (!admin) throw new UnauthorizedError("Unauthorized");
 
-    try {
-      const body = await request.json();
-      const list = (Array.isArray(body) ? body : [body]) as ImportProxyItem[];
-      const count = this.proxyUseCase.importFromJSON(list);
-      return successResponse({ imported: count }, `Successfully imported ${count} proxies`);
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to import proxies", 400);
+    const body = await request.json().catch(() => []);
+    const parsed = ImportProxyListSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map(e => `[Item ${e.path.join(".")}]: ${e.message}`).join(", ");
+      throw new ValidationError(`Invalid import format: ${msg}`);
     }
+
+    const count = this.proxyUseCase.importFromJSON(parsed.data);
+    return successResponse({ imported: count }, `Successfully imported ${count} proxies`);
   }
 
   async getPublicProxies(): Promise<Response> {
-    try {
-      const list = this.proxyUseCase.getPublicProxyList();
-      // Return raw array to match existing static proxyip.json
-      return jsonResponse(list);
-    } catch (e: any) {
-      return errorResponse("Failed to fetch public proxies", 500);
-    }
+    const list = this.proxyUseCase.getPublicProxyList();
+    return jsonResponse(list);
   }
 
   async PublicProxi(): Promise<Response> {
-    try {
-      const list = this.proxyUseCase.getPublicProxyListGrouped();
-      return jsonResponse(list);
-    } catch (e: any) {
-      return errorResponse("Failed to fetch public grouped proxies", 500);
-    }
+    const list = this.proxyUseCase.getPublicProxyListGrouped();
+    return jsonResponse(list);
   }
 
   async syncHealth(admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
-
-    try {
-      // Trigger the health check cycle in the background
-      runHealthCheck();
-      return successResponse(null, "Proxy health check started in the background");
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to start health check", 400);
-    }
+    if (!admin) throw new UnauthorizedError("Unauthorized");
+    runHealthCheck();
+    return successResponse(null, "Proxy health check started in the background");
   }
 
   async checkProxies(request: Request): Promise<Response> {
@@ -138,19 +120,15 @@ export class ProxyController {
   }
 
   async geoipLookup(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
+    if (!admin) throw new UnauthorizedError("Unauthorized");
 
     const url = new URL(request.url);
     const ip = url.searchParams.get("ip");
     if (!ip) {
-      return errorResponse("IP address parameter is required", 400);
+      throw new ValidationError("IP address parameter is required");
     }
 
-    try {
-      const data = await this.proxyUseCase.lookupGeoIP(ip);
-      return successResponse(data, "GeoIP lookup successful");
-    } catch (e: any) {
-      return errorResponse(e.message || "GeoIP lookup failed", 400);
-    }
+    const data = await this.proxyUseCase.lookupGeoIP(ip);
+    return successResponse(data, "GeoIP lookup successful");
   }
 }
