@@ -4,7 +4,7 @@ import { AuthContext } from "../middlewares/authMiddleware";
 import { CreateDomainRequest } from "../dto/domain.dto";
 
 export class DomainController {
-  private domainUseCase = new DomainUseCase();
+  constructor(private domainUseCase: DomainUseCase) {}
 
   async getDomains(request: Request, admin: AuthContext | null): Promise<Response> {
     if (!admin) return errorResponse("Unauthorized", 401);

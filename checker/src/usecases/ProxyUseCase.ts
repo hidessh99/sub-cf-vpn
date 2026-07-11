@@ -1,10 +1,11 @@
-import { ProxyRepository } from "../repositories/ProxyRepository";
+import { IProxyRepository } from "../repositories/interfaces";
 import { ProxyIP } from "../models/ProxyIP";
 import { CreateProxyRequest, UpdateProxyRequest, ImportProxyItem } from "../dto/proxy.dto";
 import { PublicProxyItem } from "../dto/response.dto";
+import { ValidationError, NotFoundError } from "../utils/errors";
 
 export class ProxyUseCase {
-  private proxyRepo = new ProxyRepository();
+  constructor(private proxyRepo: IProxyRepository) {}
 
   getAllProxies(
     page: number,
@@ -15,7 +16,7 @@ export class ProxyUseCase {
   }
 
   createProxy(data: CreateProxyRequest): ProxyIP {
-    if (!data.ip) throw new Error("IP field is required");
+    if (!data.ip) throw new ValidationError("IP field is required");
     const proxyVal = data.proxy || data.ip;
     const portVal = String(data.port || "443");
 
@@ -41,7 +42,7 @@ export class ProxyUseCase {
   updateProxy(id: number, data: UpdateProxyRequest): ProxyIP {
     const existing = this.proxyRepo.findById(id);
     if (!existing) {
-      throw new Error("Proxy not found");
+      throw new NotFoundError("Proxy not found");
     }
 
     const payload: Partial<ProxyIP> = {};
@@ -69,19 +70,19 @@ export class ProxyUseCase {
   deleteProxy(id: number): void {
     const existing = this.proxyRepo.findById(id);
     if (!existing) {
-      throw new Error("Proxy not found");
+      throw new NotFoundError("Proxy not found");
     }
     this.proxyRepo.delete(id);
   }
 
   importFromJSON(list: ImportProxyItem[]): number {
     if (!Array.isArray(list)) {
-      throw new Error("Import data must be a JSON array");
+      throw new ValidationError("Import data must be a JSON array");
     }
 
     const formatted = list.map((item: ImportProxyItem) => {
       if (!item.ip) {
-        throw new Error("Missing required field 'ip' in import items");
+        throw new ValidationError("Missing required field 'ip' in import items");
       }
       return {
         proxy: String(item.proxy || item.ip),
@@ -169,7 +170,7 @@ export class ProxyUseCase {
           }
         };
       } catch (backupErr: any) {
-        throw new Error(e.message || "GeoIP lookup failed");
+        throw new ValidationError(e.message || "GeoIP lookup failed");
       }
     }
   }

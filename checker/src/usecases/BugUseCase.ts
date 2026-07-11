@@ -1,21 +1,22 @@
-import { BugRepository } from "../repositories/BugRepository";
+import { IBugRepository } from "../repositories/interfaces";
 import { Bug } from "../models/Bug";
+import { ValidationError } from "../utils/errors";
 
 export class BugUseCase {
-  private bugRepo = new BugRepository();
+  constructor(private bugRepo: IBugRepository) {}
 
   getAllBugs(): Bug[] {
     return this.bugRepo.findAll();
   }
 
   createBug(hostname: string): Bug {
-    if (!hostname) throw new Error("Hostname is required");
+    if (!hostname) throw new ValidationError("Hostname is required");
     const cleanHostname = hostname.trim().toLowerCase();
 
     // Check duplication
     const existing = this.bugRepo.findByHostname(cleanHostname);
     if (existing) {
-      throw new Error(`Bug hostname '${cleanHostname}' already exists`);
+      throw new ValidationError(`Bug hostname '${cleanHostname}' already exists`);
     }
 
     return this.bugRepo.create(cleanHostname);
@@ -31,7 +32,7 @@ export class BugUseCase {
 
   importFromJSON(list: string[]): number {
     if (!Array.isArray(list)) {
-      throw new Error("Import data must be a JSON array of strings");
+      throw new ValidationError("Import data must be a JSON array of strings");
     }
     return this.bugRepo.bulkCreate(list);
   }

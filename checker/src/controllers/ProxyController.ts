@@ -6,7 +6,7 @@ import { runHealthCheck } from "../cron/proxyHealthCheck";
 import { checkProxy } from "../utils/checkProxy";
 
 export class ProxyController {
-  private proxyUseCase = new ProxyUseCase();
+  constructor(private proxyUseCase: ProxyUseCase) {}
 
   async getProxies(request: Request, admin: AuthContext | null): Promise<Response> {
     if (!admin) return errorResponse("Unauthorized", 401);

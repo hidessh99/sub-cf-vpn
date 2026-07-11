@@ -4,7 +4,7 @@ import { AuthContext } from "../middlewares/authMiddleware";
 import { LoginRequest, ChangePasswordRequest } from "../dto/auth.dto";
 
 export class AuthController {
-  private authUseCase = new AuthUseCase();
+  constructor(private authUseCase: AuthUseCase) {}
 
   async login(request: Request): Promise<Response> {
     try {

@@ -4,7 +4,7 @@ import { AuthContext } from "../middlewares/authMiddleware";
 import { CreateBugRequest } from "../dto/bug.dto";
 
 export class BugController {
-  private bugUseCase = new BugUseCase();
+  constructor(private bugUseCase: BugUseCase) {}
 
   async getBugs(request: Request, admin: AuthContext | null): Promise<Response> {
     if (!admin) return errorResponse("Unauthorized", 401);

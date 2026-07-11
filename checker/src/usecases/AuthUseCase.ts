@@ -1,20 +1,21 @@
-import { AdminRepository } from "../repositories/AdminRepository";
+import { IAdminRepository } from "../repositories/interfaces";
 import { verifyPassword, hashPassword } from "../utils/password";
 import { signToken } from "../utils/jwt";
 import { Admin } from "../models/Admin";
+import { UnauthorizedError, NotFoundError, ValidationError } from "../utils/errors";
 
 export class AuthUseCase {
-  private adminRepo = new AdminRepository();
+  constructor(private adminRepo: IAdminRepository) {}
 
   async login(username: string, passwordPlain: string): Promise<{ token: string; admin: Omit<Admin, "password"> }> {
     const admin = this.adminRepo.findByUsername(username);
     if (!admin || !admin.password) {
-      throw new Error("Invalid username or password");
+      throw new UnauthorizedError("Invalid username or password");
     }
 
     const isValid = await verifyPassword(passwordPlain, admin.password);
     if (!isValid) {
-      throw new Error("Invalid username or password");
+      throw new UnauthorizedError("Invalid username or password");
     }
 
     // Generate token
@@ -32,7 +33,7 @@ export class AuthUseCase {
   async getProfile(adminId: number): Promise<Omit<Admin, "password">> {
     const admin = this.adminRepo.findById(adminId);
     if (!admin) {
-      throw new Error("Admin not found");
+      throw new NotFoundError("Admin not found");
     }
 
     const { password, ...adminInfo } = admin;
@@ -42,12 +43,12 @@ export class AuthUseCase {
   async changePassword(adminId: number, oldPasswordPlain: string, newPasswordPlain: string): Promise<void> {
     const admin = this.adminRepo.findById(adminId);
     if (!admin || !admin.password) {
-      throw new Error("Admin not found");
+      throw new NotFoundError("Admin not found");
     }
 
     const isValid = await verifyPassword(oldPasswordPlain, admin.password);
     if (!isValid) {
-      throw new Error("Incorrect current password");
+      throw new ValidationError("Incorrect current password");
     }
 
     const newHashed = await hashPassword(newPasswordPlain);
