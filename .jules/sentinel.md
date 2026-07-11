@@ -1,0 +1,4 @@
+## 2026-07-11 - [Hardcoded Cryptographic Secrets]
+**Vulnerability:** The application used a hardcoded fallback JWT secret (`"super-secret-key-change-this-in-production-12345678"`) as well as allowed a weak placeholder `"YOUR_JWT_SECRET_KEY_MIN_32_CHARS"` to be actively used for signing session tokens in `config.ts` without enforcing any generation of a secure random one during runtime.
+**Learning:** Default cryptographic secrets in configuration files are often left unchanged by developers testing or deploying the application quickly, resulting in instances being permanently vulnerable to JWT forgery.
+**Prevention:** If an explicitly provided, strong configuration secret is not given or is left as a placeholder, dynamically generate a temporary strong secret for that runtime session, even if it invalidates user sessions on restarts. It guarantees security by default while prompting the operator to configure it permanently.
