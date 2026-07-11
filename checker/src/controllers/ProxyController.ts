@@ -9,8 +9,11 @@ export class ProxyController {
   constructor(private proxyUseCase: ProxyUseCase) {}
 
   async getProxies(c: Context): Promise<Response> {
-    const page = parseInt(c.req.query("page") || "1", 10);
-    const limit = parseInt(c.req.query("limit") || "10", 10);
+    let page = parseInt(c.req.query("page") || "1", 10);
+    let limit = parseInt(c.req.query("limit") || "10", 10);
+    if (isNaN(page) || page < 1) page = 1;
+    if (isNaN(limit) || limit < 1) limit = 10;
+
     const search = c.req.query("search") || undefined;
     const country = c.req.query("country") || undefined;
     
@@ -43,7 +46,7 @@ export class ProxyController {
   }
 
   async updateProxy(c: Context): Promise<Response> {
-    const id = parseInt(c.req.param("id"), 10);
+    const id = parseInt(c.req.param("id") || "", 10);
     if (isNaN(id)) {
       logger.warn(`updateProxy failed - invalid ID: ${c.req.param("id")}`, "ProxyController");
       return c.json({ success: false, message: "Invalid ID parameter", error: null }, 400);
@@ -58,7 +61,7 @@ export class ProxyController {
   }
 
   async deleteProxy(c: Context): Promise<Response> {
-    const id = parseInt(c.req.param("id"), 10);
+    const id = parseInt(c.req.param("id") || "", 10);
     if (isNaN(id)) {
       logger.warn(`deleteProxy failed - invalid ID: ${c.req.param("id")}`, "ProxyController");
       return c.json({ success: false, message: "Invalid ID parameter", error: null }, 400);
@@ -136,7 +139,7 @@ export class ProxyController {
       return c.json({ success: false, message: "IP address parameter is required", error: null }, 400);
     }
 
-    const data = await this.proxyUseCase.lookupGeoIP(ip);
+    const data = await this.proxyUseCase.lookupGeoIP(ip as string);
     return c.json({
       success: true,
       message: "GeoIP lookup successful",

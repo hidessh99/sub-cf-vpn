@@ -26,7 +26,7 @@ export class DomainController {
   }
 
   async deleteDomain(c: Context): Promise<Response> {
-    const id = parseInt(c.req.param("id"), 10);
+    const id = parseInt(c.req.param("id") || "", 10);
     if (isNaN(id)) {
       logger.warn(`deleteDomain failed - invalid ID: ${c.req.param("id")}`, "DomainController");
       return c.json({ success: false, message: "Invalid ID parameter", error: null }, 400);

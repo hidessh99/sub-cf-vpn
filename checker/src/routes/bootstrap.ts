@@ -8,6 +8,7 @@ import { AuthUseCase } from "../usecases/AuthUseCase";
 import { ProxyUseCase } from "../usecases/ProxyUseCase";
 import { DomainUseCase } from "../usecases/DomainUseCase";
 import { BugUseCase } from "../usecases/BugUseCase";
+import { DashboardUseCase } from "../usecases/DashboardUseCase";
 
 import { AuthController } from "../controllers/AuthController";
 import { ProxyController } from "../controllers/ProxyController";
@@ -30,13 +31,14 @@ export const authUseCase = new AuthUseCase(adminRepo);
 export const proxyUseCase = new ProxyUseCase(proxyRepo);
 export const domainUseCase = new DomainUseCase(domainRepo);
 export const bugUseCase = new BugUseCase(bugRepo);
+export const dashboardUseCase = new DashboardUseCase(proxyRepo, domainRepo, bugRepo);
 
 // 3. Controllers
 export const authController = new AuthController(authUseCase);
 export const proxyController = new ProxyController(proxyUseCase);
 export const domainController = new DomainController(domainUseCase);
 export const bugController = new BugController(bugUseCase);
-export const dashboardController = new DashboardController(proxyRepo, domainRepo, bugRepo);
+export const dashboardController = new DashboardController(dashboardUseCase);
 export const systemController = new SystemController();
 
 // 4. Custom validation middleware helpers
