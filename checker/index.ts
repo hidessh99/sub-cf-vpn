@@ -24,13 +24,16 @@ logger.info(`Service running on http://0.0.0.0:${server.port}`, "System");
 
 // Graceful Shutdown implementation
 const shutdown = async () => {
-  logger.info("Shutdown signal received. Closing resources...", "System");
+  logger.info("Shutdown signal received. Starting graceful shutdown...", "System");
   
-  // 1. Stop Bun server
-  server.stop();
-  logger.info("HTTP server stopped accepting new connections.", "System");
+  // 1. Stop Bun server from accepting new connections
+  server.stop(false);
+  logger.info("HTTP server stopped accepting new connections. Allowing active requests to drain...", "System");
 
-  // 2. Close SQLite connection
+  // 2. Wait for 2 seconds to allow in-flight requests to complete
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  // 3. Close SQLite connection
   try {
     db.close();
     logger.info("SQLite database connection closed safely.", "System");
