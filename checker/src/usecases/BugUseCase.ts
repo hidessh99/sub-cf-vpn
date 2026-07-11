@@ -1,6 +1,7 @@
 import { IBugRepository } from "../repositories/interfaces";
 import { Bug } from "../models/Bug";
 import { ValidationError } from "../utils/errors";
+import { logger } from "../utils/logger";
 
 export class BugUseCase {
   constructor(private bugRepo: IBugRepository) {}
@@ -16,6 +17,7 @@ export class BugUseCase {
     // Check duplication
     const existing = this.bugRepo.findByHostname(cleanHostname);
     if (existing) {
+      logger.warn(`Create bug failed - duplicate: ${cleanHostname}`, "BugUseCase");
       throw new ValidationError(`Bug hostname '${cleanHostname}' already exists`);
     }
 
@@ -34,6 +36,7 @@ export class BugUseCase {
     if (!Array.isArray(list)) {
       throw new ValidationError("Import data must be a JSON array of strings");
     }
-    return this.bugRepo.bulkCreate(list);
+    const count = this.bugRepo.bulkCreate(list);
+    return count;
   }
 }

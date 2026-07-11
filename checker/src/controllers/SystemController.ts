@@ -1,11 +1,11 @@
-import { jsonResponse } from "../utils/response";
+import { Context } from "hono";
 
 export class SystemController {
-  async healthCheck(): Promise<Response> {
-    return jsonResponse({
-      status: 'ok',
-      service: 'lufeng-vpn-checker',
-      runtime: 'bun'
+  async healthCheck(c: Context): Promise<Response> {
+    return c.json({
+      status: "ok",
+      service: "lufeng-vpn-checker",
+      runtime: "bun"
     });
   }
 }

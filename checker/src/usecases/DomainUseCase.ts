@@ -1,6 +1,7 @@
 import { IDomainRepository } from "../repositories/interfaces";
 import { Domain } from "../models/Domain";
 import { ValidationError } from "../utils/errors";
+import { logger } from "../utils/logger";
 
 export class DomainUseCase {
   constructor(private domainRepo: IDomainRepository) {}
@@ -16,6 +17,7 @@ export class DomainUseCase {
     // Check duplication
     const existing = this.domainRepo.findByDomain(cleanDomain);
     if (existing) {
+      logger.warn(`Create domain failed - duplicate: ${cleanDomain}`, "DomainUseCase");
       throw new ValidationError(`Domain '${cleanDomain}' already exists`);
     }
 
@@ -34,6 +36,7 @@ export class DomainUseCase {
     if (!Array.isArray(list)) {
       throw new ValidationError("Import data must be a JSON array of strings");
     }
-    return this.domainRepo.bulkCreate(list);
+    const count = this.domainRepo.bulkCreate(list);
+    return count;
   }
 }

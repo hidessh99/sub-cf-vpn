@@ -1,26 +1,23 @@
-import { IProxyRepository, IDomainRepository, IBugRepository } from "../repositories/interfaces";
-import { successResponse } from "../utils/response";
-import { AuthContext } from "../middlewares/authMiddleware";
-import { UnauthorizedError } from "../utils/errors";
+import { Context } from "hono";
+import { DashboardUseCase } from "../usecases/DashboardUseCase";
+import { logger } from "../utils/logger";
 
 export class DashboardController {
-  constructor(
-    private proxyRepo: IProxyRepository,
-    private domainRepo: IDomainRepository,
-    private bugRepo: IBugRepository
-  ) {}
+  constructor(private dashboardUseCase: DashboardUseCase) {}
 
-  async getStats(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) throw new UnauthorizedError("Unauthorized");
+  async getStats(c: Context): Promise<Response> {
+    const admin = c.get("admin");
+    if (!admin) {
+      logger.warn("getStats attempt without authorization", "DashboardController");
+      return c.json({ success: false, message: "Unauthorized", error: null }, 401);
+    }
 
-    const totalProxies = this.proxyRepo.count();
-    const totalDomains = this.domainRepo.count();
-    const totalBugs = this.bugRepo.count();
+    const stats = this.dashboardUseCase.getStats();
 
-    return successResponse({
-      proxies: totalProxies,
-      domains: totalDomains,
-      bugs: totalBugs,
-    }, "Dashboard stats retrieved successfully");
+    return c.json({
+      success: true,
+      message: "Dashboard stats retrieved successfully",
+      data: stats
+    });
   }
 }
