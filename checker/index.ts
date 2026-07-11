@@ -2,6 +2,7 @@ import { seed } from './database/seed';
 import { handleApiRoute } from './src/routes';
 import { config } from "./src/utils/config";
 import { logger } from './src/utils/logger';
+import { db } from './database/database';
 
 // Run database init and seed on startup
 try {
@@ -23,5 +24,28 @@ const server = Bun.serve({
 });
 
 logger.info(`Service running on http://0.0.0.0:${server.port}`, "System");
+
+// Graceful Shutdown implementation
+const shutdown = async () => {
+  logger.info("Shutdown signal received. Closing resources...", "System");
+  
+  // 1. Stop Bun server
+  server.stop();
+  logger.info("HTTP server stopped accepting new connections.", "System");
+
+  // 2. Close SQLite connection
+  try {
+    db.close();
+    logger.info("SQLite database connection closed safely.", "System");
+  } catch (err) {
+    logger.error("Error closing SQLite connection", err, "System");
+  }
+
+  logger.info("Graceful shutdown complete. Exiting process.", "System");
+  process.exit(0);
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
 
 export default server;
