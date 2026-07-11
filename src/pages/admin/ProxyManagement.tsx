@@ -1,251 +1,59 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { adminFetch } from '../../utils/adminApi';
+import React, { useState } from 'react';
+import { Search, Loader2, Plus, Download, RefreshCw, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
-import { PaginatedResponse } from '../../types/admin';
 import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
-
-interface ProxyIP {
-  id: number;
-  proxy: string;
-  port: string;
-  proxyip: boolean;
-  ip: string;
-  latency: number;
-  asn: number | null;
-  as_organization: string | null;
-  colo: string | null;
-  country: string | null;
-  city: string | null;
-  region: string | null;
-  postal_code: string | null;
-  latitude: string | null;
-  longitude: string | null;
-  is_active: boolean;
-}
+import { useAdminProxies } from '../../hooks/useAdminProxies';
+import { ProxyIP } from '../../types/admin';
+import { ProxyFormModal } from '../../components/admin/ProxyFormModal';
+import { ProxyImportModal } from '../../components/admin/ProxyImportModal';
 
 export const ProxyManagement: React.FC = () => {
-  const [proxies, setProxies] = useState<ProxyIP[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const limit = 10;
+
   const { showToast } = useToast();
 
-  // Modals state
+  // Queries & Mutations from custom hook
+  const {
+    proxies,
+    total,
+    isLoading,
+    isFetching,
+    addProxy,
+    editProxy,
+    deleteProxy,
+    importProxies,
+    syncHealth,
+    fetchGeoIP,
+  } = useAdminProxies(page, limit, search);
+
+  // Modal States
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingProxy, setEditingProxy] = useState<ProxyIP | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [proxyToDelete, setProxyToDelete] = useState<number | null>(null);
-  const [syncingHealth, setSyncingHealth] = useState(false);
-  const [isFetchingGeo, setIsFetchingGeo] = useState(false);
 
-  // Form inputs
-  const [formData, setFormData] = useState({
-    proxy: '',
-    port: '443',
-    proxyip: true,
-    ip: '',
-    latency: 0,
-    asn: '',
-    as_organization: '',
-    colo: '',
-    country: '',
-    city: '',
-    region: '',
-    postal_code: '',
-    latitude: '',
-    longitude: '',
-    is_active: true
-  });
-  
-  const [importJson, setImportJson] = useState('');
-
-  const fetchProxies = useCallback(async () => {
-    setLoading(true);
+  // Clean Dead Proxies Trigger
+  const handleSyncHealth = async () => {
     try {
-      const query = new URLSearchParams({
-        page: String(page),
-        limit: String(limit)
-      });
-      if (search.trim()) {
-        query.append('search', search.trim());
-      }
-
-      const response = await adminFetch<PaginatedResponse<ProxyIP>>(`/api/v1/proxies?${query.toString()}`);
-      if (response.success) {
-        setProxies(response.data);
-        setTotal(response.pagination.total);
-      }
+      const res = await syncHealth.mutateAsync();
+      showToast(res.message || 'Proxy health check started in the background', 'success');
     } catch (err: any) {
-      showToast(err.message || 'Failed to fetch proxies', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, limit, search, showToast]);
-
-  useEffect(() => {
-    fetchProxies();
-  }, [fetchProxies]);
-
-  const fetchGeoIPDetails = async (ipAddress: string) => {
-    if (!ipAddress) return;
-    const trimmed = ipAddress.trim();
-    
-    // Quick regex pattern matching for IPv4/IPv6 address (ignoring local/private networks for GeoIP lookup)
-    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-    const ipv6ShortRegex = /^([0-9a-fA-F]{1,4}:){0,7}:[0-9a-fA-F]{0,7}$/;
-
-    if (!ipv4Regex.test(trimmed) && !ipv6Regex.test(trimmed) && !ipv6ShortRegex.test(trimmed)) {
-      return;
-    }
-
-    setIsFetchingGeo(true);
-    try {
-      const response = await adminFetch<any>(`/api/v1/proxies/geoip?ip=${encodeURIComponent(trimmed)}`);
-      if (response && response.success && response.data) {
-        const data = response.data;
-        setFormData(prev => ({
-          ...prev,
-          country: data.country_code || prev.country,
-          city: data.city || prev.city,
-          region: data.region || prev.region,
-          postal_code: data.postal || prev.postal_code,
-          latitude: data.latitude ? String(data.latitude) : prev.latitude,
-          longitude: data.longitude ? String(data.longitude) : prev.longitude,
-          asn: data.connection?.asn ? String(data.connection.asn) : prev.asn,
-          as_organization: data.connection?.org || prev.as_organization,
-        }));
-        showToast(`Successfully retrieved GeoIP for ${trimmed}`, 'success');
-      }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to fetch GeoIP details', 'error');
-    } finally {
-      setIsFetchingGeo(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    let val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
-
-    if ((name === 'ip' || name === 'proxy') && typeof val === 'string' && val.includes(':')) {
-      const lastColonIdx = val.lastIndexOf(':');
-      let extractedIp = val.substring(0, lastColonIdx);
-      const extractedPort = val.substring(lastColonIdx + 1);
-
-      if (extractedIp.startsWith('[') && extractedIp.endsWith(']')) {
-        extractedIp = extractedIp.slice(1, -1);
-      }
-
-      setFormData(prev => {
-        const next = { ...prev };
-        next.ip = extractedIp;
-        next.port = extractedPort;
-        if (name === 'proxy' || !prev.proxy || prev.proxy === prev.ip) {
-          next.proxy = extractedIp;
-        }
-        return next;
-      });
-
-      fetchGeoIPDetails(extractedIp);
-      return;
-    }
-
-    setFormData(prev => ({ ...prev, [name]: val }));
-
-    if (name === 'ip' && typeof val === 'string') {
-      const trimmed = val.trim();
-      const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-      if (ipv4Regex.test(trimmed)) {
-        fetchGeoIPDetails(trimmed);
-      }
+      showToast(err.message || 'Failed to trigger proxy health check', 'error');
     }
   };
 
   const handleOpenAdd = () => {
-    setFormData({
-      proxy: '',
-      port: '443',
-      proxyip: true,
-      ip: '',
-      latency: 0,
-      asn: '',
-      as_organization: '',
-      colo: '',
-      country: '',
-      city: '',
-      region: '',
-      postal_code: '',
-      latitude: '',
-      longitude: '',
-      is_active: true
-    });
     setEditingProxy(null);
     setShowAddModal(true);
   };
 
-  const handleOpenEdit = (p: ProxyIP) => {
-    setEditingProxy(p);
-    setFormData({
-      proxy: p.proxy,
-      port: p.port,
-      proxyip: p.proxyip,
-      ip: p.ip,
-      latency: p.latency,
-      asn: p.asn ? String(p.asn) : '',
-      as_organization: p.as_organization || '',
-      colo: p.colo || '',
-      country: p.country || '',
-      city: p.city || '',
-      region: p.region || '',
-      postal_code: p.postal_code || '',
-      latitude: p.latitude || '',
-      longitude: p.longitude || '',
-      is_active: p.is_active
-    });
+  const handleOpenEdit = (proxy: ProxyIP) => {
+    setEditingProxy(proxy);
     setShowAddModal(true);
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.ip) {
-      showToast('IP is required', 'error');
-      return;
-    }
-
-    const payload = {
-      ...formData,
-      latency: Number(formData.latency),
-      asn: formData.asn ? Number(formData.asn) : null
-    };
-
-    try {
-      if (editingProxy) {
-        const response = await adminFetch(`/api/v1/proxies/${editingProxy.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(payload)
-        });
-        if (response.success) {
-          showToast('Proxy updated successfully', 'success');
-        }
-      } else {
-        const response = await adminFetch('/api/v1/proxies', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        if (response.success) {
-          showToast('Proxy added successfully', 'success');
-        }
-      }
-      setShowAddModal(false);
-      fetchProxies();
-    } catch (err: any) {
-      showToast(err.message || 'Failed to save proxy', 'error');
-    }
   };
 
   const initiateDelete = (id: number) => {
@@ -256,12 +64,11 @@ export const ProxyManagement: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (proxyToDelete === null) return;
     try {
-      const response = await adminFetch(`/api/v1/proxies/${proxyToDelete}`, {
-        method: 'DELETE'
-      });
-      if (response.success) {
-        showToast('Proxy deleted successfully', 'success');
-        fetchProxies();
+      const res = await deleteProxy.mutateAsync(proxyToDelete);
+      showToast(res.message || 'Proxy deleted successfully', 'success');
+      // If deleted the last item on the page, roll back page index
+      if (proxies.length === 1 && page > 1) {
+        setPage((p) => p - 1);
       }
     } catch (err: any) {
       showToast(err.message || 'Failed to delete proxy', 'error');
@@ -271,42 +78,18 @@ export const ProxyManagement: React.FC = () => {
     }
   };
 
-  const handleImport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const parsed = JSON.parse(importJson);
-      const response = await adminFetch('/api/v1/proxies/import', {
-        method: 'POST',
-        body: JSON.stringify(parsed)
-      });
-      if (response.success) {
-        showToast(response.message || 'Proxies imported successfully', 'success');
-        setShowImportModal(false);
-        setImportJson('');
-        fetchProxies();
-      }
-    } catch (err: any) {
-      showToast(err.message || 'Invalid JSON format or import failed', 'error');
+  const handleSaveProxy = async (proxyData: Omit<ProxyIP, 'id'>) => {
+    if (editingProxy) {
+      const res = await editProxy.mutateAsync({ id: editingProxy.id, data: proxyData });
+      showToast(res.message || 'Proxy updated successfully', 'success');
+    } else {
+      const res = await addProxy.mutateAsync(proxyData);
+      showToast(res.message || 'Proxy added successfully', 'success');
     }
   };
 
-  const handleSyncHealth = async () => {
-    setSyncingHealth(true);
-    try {
-      const response = await adminFetch('/api/v1/proxies/sync-health', {
-        method: 'POST'
-      });
-      if (response.success) {
-        showToast(response.message || 'Proxy health check started in the background', 'success');
-        setTimeout(() => {
-          fetchProxies();
-        }, 3000);
-      }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to trigger proxy health check', 'error');
-    } finally {
-      setSyncingHealth(false);
-    }
+  const handleImportJson = async (jsonText: string) => {
+    await importProxies.mutateAsync(jsonText);
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -315,7 +98,7 @@ export const ProxyManagement: React.FC = () => {
     <AdminLayout>
       <div className="flex flex-col gap-6 w-full h-full">
         {/* Header Action Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-shrink-0">
           <div>
             <h2 className="text-2xl font-bold text-white tracking-tight">Proxy IP Management</h2>
             <p className="text-slate-400 text-sm mt-1">Total {total} configurations registered</p>
@@ -323,43 +106,40 @@ export const ProxyManagement: React.FC = () => {
           <div className="flex flex-wrap gap-3 w-full sm:w-auto">
             <button
               onClick={handleSyncHealth}
-              disabled={syncingHealth}
+              disabled={syncHealth.isPending}
               className="flex-grow sm:flex-initial px-4 py-2.5 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none text-xs font-semibold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1.5"
             >
-              {syncingHealth ? (
+              {syncHealth.isPending ? (
                 <>
-                  <svg className="animate-spin h-3.5 w-3.5 text-current" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
+                  <Loader2 className="animate-spin h-3.5 w-3.5 text-current" />
                   Syncing...
                 </>
               ) : (
                 <>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0114 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                  </svg>
+                  <RefreshCw className="w-4 h-4" />
                   Clean Dead Proxies
                 </>
               )}
             </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex-grow sm:flex-initial px-4 py-2.5 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold tracking-wider uppercase transition-all duration-200"
+              className="flex-grow sm:flex-initial px-4 py-2.5 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1.5"
             >
+              <Download className="w-4 h-4" />
               Import JSON
             </button>
             <button
               onClick={handleOpenAdd}
-              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold tracking-wider uppercase shadow-lg shadow-purple-500/20 hover:from-purple-500 hover:to-pink-500 transition-all duration-200"
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold tracking-wider uppercase shadow-lg shadow-purple-500/20 hover:from-purple-500 hover:to-pink-500 transition-all duration-200 flex items-center justify-center gap-1.5"
             >
+              <Plus className="w-4 h-4" />
               Add Proxy
             </button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="w-full flex gap-3 p-3 rounded-2xl bg-slate-900/40 border border-white/5 backdrop-blur-md">
+        <div className="w-full flex gap-3 p-3 rounded-2xl bg-slate-900/40 border border-white/5 backdrop-blur-md flex-shrink-0">
           <div className="relative flex-grow">
             <input
               type="text"
@@ -371,27 +151,20 @@ export const ProxyManagement: React.FC = () => {
               }}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl gento-input text-xs"
             />
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602z" />
-            </svg>
+            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           </div>
         </div>
 
         {/* Table Container */}
-        <div className="flex-grow w-full overflow-hidden rounded-3xl gento-card backdrop-blur-xl border border-white/5 shadow-2xl flex flex-col justify-between">
-          <div className="overflow-x-auto min-h-0">
-            {loading ? (
+        <div className="flex-grow w-full overflow-hidden rounded-3xl gento-card backdrop-blur-xl border border-white/5 shadow-2xl flex flex-col justify-between min-h-[400px]">
+          <div className="overflow-x-auto min-h-0 flex-grow">
+            {isLoading || isFetching ? (
               <div className="flex justify-center items-center py-32">
-                <svg className="animate-spin h-8 w-8 text-purple-500" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
+                <Loader2 className="animate-spin h-8 w-8 text-purple-500" />
               </div>
             ) : proxies.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-32 text-slate-500 gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-slate-600">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                </svg>
+                <AlertTriangle className="w-12 h-12 text-slate-600" />
                 <span className="text-sm font-semibold">No proxies found</span>
                 <span className="text-xs">Add a new proxy configuration or import a JSON list.</span>
               </div>
@@ -419,21 +192,29 @@ export const ProxyManagement: React.FC = () => {
                           {p.country || 'N/A'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 truncate max-w-xs">{p.as_organization || 'N/A'}</td>
+                      <td className="px-6 py-4 truncate max-w-[200px]">{p.as_organization || 'N/A'}</td>
                       <td className="px-6 py-4 font-mono text-purple-400">{p.colo || 'N/A'}</td>
                       <td className="px-6 py-4 font-mono">{p.latency}ms</td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider text-[10px] ${
-                          p.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                        }`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${p.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider text-[10px] ${
+                            p.is_active
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              p.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
+                            }`}
+                          />
                           {p.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right space-x-2">
                         <button
                           onClick={() => handleOpenEdit(p)}
-                          className="px-2.5 py-1 rounded-lg border border-white/10 hover:border-white/20 hover:bg-slate-800 text-slate-300 hover:text-white"
+                          className="px-2.5 py-1 rounded-lg border border-white/10 hover:border-white/20 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors"
                         >
                           Edit
                         </button>
@@ -453,22 +234,22 @@ export const ProxyManagement: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-between items-center px-6 py-4 border-t border-white/5 bg-slate-900/20">
+            <div className="flex justify-between items-center px-6 py-4 border-t border-white/5 bg-slate-900/20 flex-shrink-0">
               <span className="text-xs text-slate-500">
                 Page {page} of {totalPages}
               </span>
               <div className="flex gap-2">
                 <button
                   disabled={page === 1}
-                  onClick={() => setPage(p => p - 1)}
-                  className="px-3.5 py-1.5 rounded-lg border border-white/10 hover:bg-slate-800 text-slate-300 disabled:opacity-30 disabled:pointer-events-none text-xs"
+                  onClick={() => setPage((p) => p - 1)}
+                  className="px-3.5 py-1.5 rounded-lg border border-white/10 hover:bg-slate-800 text-slate-300 disabled:opacity-30 disabled:pointer-events-none text-xs transition-colors"
                 >
                   Previous
                 </button>
                 <button
                   disabled={page === totalPages}
-                  onClick={() => setPage(p => p + 1)}
-                  className="px-3.5 py-1.5 rounded-lg border border-white/10 hover:bg-slate-800 text-slate-300 disabled:opacity-30 disabled:pointer-events-none text-xs"
+                  onClick={() => setPage((p) => p + 1)}
+                  className="px-3.5 py-1.5 rounded-lg border border-white/10 hover:bg-slate-800 text-slate-300 disabled:opacity-30 disabled:pointer-events-none text-xs transition-colors"
                 >
                   Next
                 </button>
@@ -478,284 +259,37 @@ export const ProxyManagement: React.FC = () => {
         </div>
 
         {/* Add/Edit Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="w-full max-w-2xl p-6 rounded-3xl gento-card backdrop-blur-2xl border border-white/10 shadow-2xl flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center pb-3 border-b border-white/5">
-                <h3 className="text-lg font-bold text-white">
-                  {editingProxy ? 'Edit Proxy Configuration' : 'Add Proxy Configuration'}
-                </h3>
-                <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">IP (Required)</label>
-                    <button
-                      type="button"
-                      onClick={() => fetchGeoIPDetails(formData.ip)}
-                      disabled={isFetchingGeo || !formData.ip.trim()}
-                      className="text-[9px] font-bold text-purple-400 hover:text-purple-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
-                    >
-                      {isFetchingGeo ? (
-                        <>
-                          <i className="fas fa-circle-notch fa-spin mr-0.5"></i> Fetching...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-globe mr-0.5"></i> Fetch Geo
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    name="ip"
-                    value={formData.ip}
-                    onChange={handleInputChange}
-                    placeholder="e.g. 1.1.1.1 or 1.1.1.1:443"
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Proxy Address</label>
-                  <input
-                    type="text"
-                    name="proxy"
-                    value={formData.proxy}
-                    onChange={handleInputChange}
-                    placeholder="e.g. custom.proxy.com (defaults to IP)"
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Port</label>
-                  <input
-                    type="text"
-                    name="port"
-                    value={formData.port}
-                    onChange={handleInputChange}
-                    placeholder="e.g. 443"
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Latency (ms)</label>
-                  <input
-                    type="number"
-                    name="latency"
-                    value={formData.latency}
-                    onChange={handleInputChange}
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">ASN</label>
-                  <input
-                    type="number"
-                    name="asn"
-                    value={formData.asn}
-                    onChange={handleInputChange}
-                    placeholder="e.g. 13335"
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">AS Organization</label>
-                  <input
-                    type="text"
-                    name="as_organization"
-                    value={formData.as_organization}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Cloudflare, Inc."
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Colo</label>
-                  <input
-                    type="text"
-                    name="colo"
-                    value={formData.colo}
-                    onChange={handleInputChange}
-                    placeholder="e.g. SIN"
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Country Code</label>
-                  <input
-                    type="text"
-                    name="country"
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    placeholder="e.g. SG"
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">City</label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Singapore"
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Region</label>
-                  <input
-                    type="text"
-                    name="region"
-                    value={formData.region}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Central Singapore"
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Postal Code</label>
-                  <input
-                    type="text"
-                    name="postal_code"
-                    value={formData.postal_code}
-                    onChange={handleInputChange}
-                    placeholder="e.g. 189067"
-                    className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Coordinates (Lat, Long)</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      name="latitude"
-                      value={formData.latitude}
-                      onChange={handleInputChange}
-                      placeholder="Lat"
-                      className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                    />
-                    <input
-                      type="text"
-                      name="longitude"
-                      value={formData.longitude}
-                      onChange={handleInputChange}
-                      placeholder="Long"
-                      className="px-3 py-2.5 rounded-xl gento-input text-xs"
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 flex gap-6 py-2 border-t border-white/5 mt-2">
-                  <label className="flex items-center gap-2 text-xs font-medium text-slate-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="proxyip"
-                      checked={formData.proxyip}
-                      onChange={handleInputChange}
-                      className="rounded border-white/10 bg-slate-950 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span>Proxy IP Mode</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-medium text-slate-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="is_active"
-                      checked={formData.is_active}
-                      onChange={handleInputChange}
-                      className="rounded border-white/10 bg-slate-950 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span>Status Active</span>
-                  </label>
-                </div>
-
-                <div className="md:col-span-2 flex justify-end gap-3 pt-3 border-t border-white/5 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold uppercase"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold uppercase shadow-lg shadow-purple-500/20 hover:from-purple-500 hover:to-pink-500"
-                  >
-                    Save Configuration
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <ProxyFormModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          editingProxy={editingProxy}
+          onSave={handleSaveProxy}
+          fetchGeoIP={fetchGeoIP}
+          showToast={showToast}
+        />
 
         {/* Import Modal */}
-        {showImportModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="w-full max-w-xl p-6 rounded-3xl gento-card backdrop-blur-2xl border border-white/10 shadow-2xl flex flex-col gap-4">
-              <div className="flex justify-between items-center pb-3 border-b border-white/5">
-                <h3 className="text-lg font-bold text-white">Import Proxies JSON</h3>
-                <button onClick={() => setShowImportModal(false)} className="text-slate-400 hover:text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+        <ProxyImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImportJson}
+          showToast={showToast}
+        />
 
-              <form onSubmit={handleImport} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Paste JSON Array</label>
-                  <textarea
-                    rows={12}
-                    value={importJson}
-                    onChange={(e) => setImportJson(e.target.value)}
-                    placeholder='[\n  {\n    "proxy": "1.1.1.1",\n    "port": "443",\n    "ip": "1.1.1.1",\n    "country": "SG"\n  }\n]'
-                    className="w-full p-4 rounded-2xl gento-input text-xs font-mono"
-                    required
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-3 border-t border-white/5">
-                  <button
-                    type="button"
-                    onClick={() => setShowImportModal(false)}
-                    className="px-4 py-2 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold uppercase"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold uppercase shadow-lg shadow-purple-500/20 hover:from-purple-500 hover:to-pink-500"
-                  >
-                    Start Import
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {/* Delete Confirmation */}
+        <ConfirmDialog
+          isOpen={showConfirm}
+          title="Delete Proxy Configuration?"
+          message="Are you sure you want to delete this proxy? This action cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => {
+            setShowConfirm(false);
+            setProxyToDelete(null);
+          }}
+        />
       </div>
-
-      <ConfirmDialog
-        isOpen={showConfirm}
-        title="Delete Proxy Configuration?"
-        message="Are you sure you want to delete this proxy? This action cannot be undone."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => {
-          setShowConfirm(false);
-          setProxyToDelete(null);
-        }}
-      />
     </AdminLayout>
   );
 };

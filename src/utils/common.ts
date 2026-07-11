@@ -20,6 +20,15 @@ export const safeBase64Encode = (str: string): string => {
 };
 
 export const copyToClipboard = async (text: string): Promise<boolean> => {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fallback to legacy method on failure
+    }
+  }
+  
   try {
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -27,9 +36,9 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
-    document.execCommand('copy');
+    const success = document.execCommand('copy');
     document.body.removeChild(ta);
-    return true;
+    return success;
   } catch (err) {
     return false;
   }

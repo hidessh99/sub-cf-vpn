@@ -20,6 +20,7 @@ export interface AppConfig {
 
 const configPath = join(import.meta.dir, "..", "..", "config.json");
 const file = Bun.file(configPath);
+const randomSecret = require("node:crypto").randomBytes(32).toString("hex");
 
 let config: AppConfig;
 
@@ -34,7 +35,7 @@ try {
   config = {
     port: parseInt(process.env.PORT || "4002", 10),
     jwt: {
-      secret: process.env.JWT_SECRET || "super-secret-key-change-this-in-production-12345678",
+      secret: process.env.JWT_SECRET || randomSecret ,
       expiresIn: process.env.JWT_EXPIRES_IN || "24h"
     },
     admin: {

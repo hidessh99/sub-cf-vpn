@@ -2,8 +2,9 @@ import { config } from '../utils/config';
 import { ProxyRepository } from '../repositories/ProxyRepository';
 import { checkProxy } from '../utils/checkProxy';
 import { logger } from '../utils/logger';
+import { db } from '../../database/database';
 
-const proxyRepo = new ProxyRepository();
+const proxyRepo = new ProxyRepository(db);
 
 export async function runHealthCheck() {
   const cronConfig = config.cronCheck || {};
