@@ -1,71 +1,55 @@
 import { DomainUseCase } from "../usecases/DomainUseCase";
-import { successResponse, errorResponse, jsonResponse } from "../utils/response";
+import { successResponse, jsonResponse } from "../utils/response";
 import { AuthContext } from "../middlewares/authMiddleware";
-import { CreateDomainRequest } from "../dto/domain.dto";
+import { CreateDomainRequestSchema } from "../dto/domain.dto";
+import { ValidationError, UnauthorizedError } from "../utils/errors";
+import { z } from "zod";
 
 export class DomainController {
-  private domainUseCase = new DomainUseCase();
+  constructor(private domainUseCase: DomainUseCase) {}
 
   async getDomains(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
-
-    try {
-      const list = this.domainUseCase.getAllDomains();
-      return successResponse(list, "Domains retrieved successfully");
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to fetch domains", 400);
-    }
+    if (!admin) throw new UnauthorizedError("Unauthorized");
+    const list = this.domainUseCase.getAllDomains();
+    return successResponse(list, "Domains retrieved successfully");
   }
 
   async createDomain(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
+    if (!admin) throw new UnauthorizedError("Unauthorized");
 
-    try {
-      const body = await request.json() as CreateDomainRequest;
-      const { domain } = body;
-      
-      if (!domain) {
-        return errorResponse("Domain field is required", 400);
-      }
-
-      const result = this.domainUseCase.createDomain(domain);
-      return successResponse(result, "Domain created successfully", 201);
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to create domain", 400);
+    const body = await request.json().catch(() => ({}));
+    const parsed = CreateDomainRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map(e => e.message).join(", ");
+      throw new ValidationError(msg);
     }
+
+    const { domain } = parsed.data;
+    const result = this.domainUseCase.createDomain(domain);
+    return successResponse(result, "Domain created successfully", 201);
   }
 
   async deleteDomain(id: number, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
-
-    try {
-      this.domainUseCase.deleteDomain(id);
-      return successResponse(null, "Domain deleted successfully");
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to delete domain", 400);
-    }
+    if (!admin) throw new UnauthorizedError("Unauthorized");
+    this.domainUseCase.deleteDomain(id);
+    return successResponse(null, "Domain deleted successfully");
   }
 
   async getPublicDomains(): Promise<Response> {
-    try {
-      const list = this.domainUseCase.getPublicDomainList();
-      // Return raw array of strings to match static domain.json
-      return jsonResponse(list);
-    } catch (e: any) {
-      return errorResponse("Failed to fetch public domains", 500);
-    }
+    const list = this.domainUseCase.getPublicDomainList();
+    return jsonResponse(list);
   }
 
   async importDomains(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) return errorResponse("Unauthorized", 401);
+    if (!admin) throw new UnauthorizedError("Unauthorized");
 
-    try {
-      const body = await request.json();
-      const list = (Array.isArray(body) ? body : [body]) as string[];
-      const count = this.domainUseCase.importFromJSON(list);
-      return successResponse({ imported: count }, `Successfully imported ${count} domains`);
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to import domains", 400);
+    const body = await request.json().catch(() => []);
+    const parsed = z.array(z.string().min(1)).safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError("Import data must be a JSON array of non-empty strings");
     }
+
+    const count = this.domainUseCase.importFromJSON(parsed.data);
+    return successResponse({ imported: count }, `Successfully imported ${count} domains`);
   }
 }

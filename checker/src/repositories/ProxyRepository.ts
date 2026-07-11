@@ -1,10 +1,13 @@
-import { db } from "../../database/database";
+import { Database } from "bun:sqlite";
 import { ProxyIP } from "../models/ProxyIP";
 import { ProxyRow } from "../entities/ProxyEntity";
 import { CountRow, IdRow } from "../entities/CommonEntity";
 import { PublicProxyItem } from "../dto/response.dto";
+import { IProxyRepository } from "./interfaces";
 
-export class ProxyRepository {
+export class ProxyRepository implements IProxyRepository {
+  constructor(private db: Database) {}
+
   findAll(
     page: number,
     limit: number,
@@ -31,7 +34,7 @@ export class ProxyRepository {
 
     // Get total count
     const countSql = `SELECT COUNT(*) as count ${baseQuery}`;
-    const countResult = db.query(countSql).get(...params) as CountRow;
+    const countResult = this.db.query(countSql).get(...params) as CountRow;
     const total = countResult.count;
 
     // Get paginated data
@@ -39,7 +42,7 @@ export class ProxyRepository {
     const offset = (page - 1) * limit;
     const selectParams = [...params, limit, offset];
     
-    const rows = db.query(dataSql).all(...selectParams) as ProxyRow[];
+    const rows = this.db.query(dataSql).all(...selectParams) as ProxyRow[];
     
     // Map rows to ProxyIP structure
     const data = rows.map(r => this.mapRowToModel(r));
@@ -48,13 +51,13 @@ export class ProxyRepository {
   }
 
   findById(id: number): ProxyIP | null {
-    const row = db.query("SELECT * FROM proxies WHERE id = ? LIMIT 1").get(id) as ProxyRow | null;
+    const row = this.db.query("SELECT * FROM proxies WHERE id = ? LIMIT 1").get(id) as ProxyRow | null;
     if (!row) return null;
     return this.mapRowToModel(row);
   }
 
   create(p: Omit<ProxyIP, "id" | "created_at" | "updated_at">): ProxyIP {
-    const insert = db.prepare(`
+    const insert = this.db.prepare(`
       INSERT INTO proxies (
         proxy, port, proxyip, ip, latency, asn, as_organization, 
         colo, country, city, region, postal_code, latitude, longitude, is_active
@@ -118,18 +121,18 @@ export class ProxyRepository {
     if (fields.length > 0) {
       fields.push("updated_at = datetime('now')");
       const sql = `UPDATE proxies SET ${fields.join(", ")} WHERE id = $id`;
-      db.prepare(sql).run({ ...values, $id: id });
+      this.db.prepare(sql).run({ ...values, $id: id });
     }
 
     return this.findById(id)!;
   }
 
   delete(id: number): void {
-    db.query("DELETE FROM proxies WHERE id = ?").run(id);
+    this.db.query("DELETE FROM proxies WHERE id = ?").run(id);
   }
 
   bulkCreate(proxies: Omit<ProxyIP, "id" | "created_at" | "updated_at">[]): number {
-    const insertProxy = db.prepare(`
+    const insertProxy = this.db.prepare(`
       INSERT INTO proxies (
         proxy, port, proxyip, ip, latency, asn, as_organization, 
         colo, country, city, region, postal_code, latitude, longitude, is_active
@@ -140,7 +143,7 @@ export class ProxyRepository {
     `);
 
     let count = 0;
-    const transaction = db.transaction((list: Omit<ProxyIP, "id" | "created_at" | "updated_at">[]) => {
+    const transaction = this.db.transaction((list: Omit<ProxyIP, "id" | "created_at" | "updated_at">[]) => {
       for (const p of list) {
         insertProxy.run({
           $proxy: p.proxy,
@@ -167,7 +170,7 @@ export class ProxyRepository {
   }
 
   getPublicList(): PublicProxyItem[] {
-    const rows = db.query("SELECT * FROM proxies WHERE is_active = 1").all() as ProxyRow[];
+    const rows = this.db.query("SELECT * FROM proxies WHERE is_active = 1").all() as ProxyRow[];
     return rows.map((r) => ({
       proxy: r.proxy,
       port: r.port,
@@ -187,7 +190,7 @@ export class ProxyRepository {
   }
 
   count(): number {
-    const result = db.query("SELECT COUNT(*) as count FROM proxies").get() as CountRow;
+    const result = this.db.query("SELECT COUNT(*) as count FROM proxies").get() as CountRow;
     return result.count;
   }
 
@@ -215,14 +218,14 @@ export class ProxyRepository {
   }
 
   findAllActive(): ProxyIP[] {
-    const rows = db.query("SELECT * FROM proxies WHERE is_active = 1").all() as ProxyRow[];
+    const rows = this.db.query("SELECT * FROM proxies WHERE is_active = 1").all() as ProxyRow[];
     return rows.map(r => this.mapRowToModel(r));
   }
 
   bulkDelete(ids: number[]): number {
     if (ids.length === 0) return 0;
     const placeholders = ids.map(() => '?').join(',');
-    db.query(`DELETE FROM proxies WHERE id IN (${placeholders})`).run(...ids);
+    this.db.query(`DELETE FROM proxies WHERE id IN (${placeholders})`).run(...ids);
     return ids.length;
   }
 }

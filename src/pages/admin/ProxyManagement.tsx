@@ -40,6 +40,7 @@ export const ProxyManagement: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [proxyToDelete, setProxyToDelete] = useState<number | null>(null);
   const [syncingHealth, setSyncingHealth] = useState(false);
+  const [isFetchingGeo, setIsFetchingGeo] = useState(false);
 
   // Form inputs
   const [formData, setFormData] = useState({
@@ -89,10 +90,80 @@ export const ProxyManagement: React.FC = () => {
     fetchProxies();
   }, [fetchProxies]);
 
+  const fetchGeoIPDetails = async (ipAddress: string) => {
+    if (!ipAddress) return;
+    const trimmed = ipAddress.trim();
+    
+    // Quick regex pattern matching for IPv4/IPv6 address (ignoring local/private networks for GeoIP lookup)
+    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+    const ipv6ShortRegex = /^([0-9a-fA-F]{1,4}:){0,7}:[0-9a-fA-F]{0,7}$/;
+
+    if (!ipv4Regex.test(trimmed) && !ipv6Regex.test(trimmed) && !ipv6ShortRegex.test(trimmed)) {
+      return;
+    }
+
+    setIsFetchingGeo(true);
+    try {
+      const response = await adminFetch<any>(`/api/v1/proxies/geoip?ip=${encodeURIComponent(trimmed)}`);
+      if (response && response.success && response.data) {
+        const data = response.data;
+        setFormData(prev => ({
+          ...prev,
+          country: data.country_code || prev.country,
+          city: data.city || prev.city,
+          region: data.region || prev.region,
+          postal_code: data.postal || prev.postal_code,
+          latitude: data.latitude ? String(data.latitude) : prev.latitude,
+          longitude: data.longitude ? String(data.longitude) : prev.longitude,
+          asn: data.connection?.asn ? String(data.connection.asn) : prev.asn,
+          as_organization: data.connection?.org || prev.as_organization,
+        }));
+        showToast(`Successfully retrieved GeoIP for ${trimmed}`, 'success');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to fetch GeoIP details', 'error');
+    } finally {
+      setIsFetchingGeo(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    let val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+
+    if ((name === 'ip' || name === 'proxy') && typeof val === 'string' && val.includes(':')) {
+      const lastColonIdx = val.lastIndexOf(':');
+      let extractedIp = val.substring(0, lastColonIdx);
+      const extractedPort = val.substring(lastColonIdx + 1);
+
+      if (extractedIp.startsWith('[') && extractedIp.endsWith(']')) {
+        extractedIp = extractedIp.slice(1, -1);
+      }
+
+      setFormData(prev => {
+        const next = { ...prev };
+        next.ip = extractedIp;
+        next.port = extractedPort;
+        if (name === 'proxy' || !prev.proxy || prev.proxy === prev.ip) {
+          next.proxy = extractedIp;
+        }
+        return next;
+      });
+
+      fetchGeoIPDetails(extractedIp);
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: val }));
+
+    if (name === 'ip' && typeof val === 'string') {
+      const trimmed = val.trim();
+      const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+      if (ipv4Regex.test(trimmed)) {
+        fetchGeoIPDetails(trimmed);
+      }
+    }
   };
 
   const handleOpenAdd = () => {
@@ -423,13 +494,31 @@ export const ProxyManagement: React.FC = () => {
 
               <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">IP (Required)</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">IP (Required)</label>
+                    <button
+                      type="button"
+                      onClick={() => fetchGeoIPDetails(formData.ip)}
+                      disabled={isFetchingGeo || !formData.ip.trim()}
+                      className="text-[9px] font-bold text-purple-400 hover:text-purple-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                    >
+                      {isFetchingGeo ? (
+                        <>
+                          <i className="fas fa-circle-notch fa-spin mr-0.5"></i> Fetching...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-globe mr-0.5"></i> Fetch Geo
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <input
                     type="text"
                     name="ip"
                     value={formData.ip}
                     onChange={handleInputChange}
-                    placeholder="e.g. 1.1.1.1"
+                    placeholder="e.g. 1.1.1.1 or 1.1.1.1:443"
                     className="px-3 py-2.5 rounded-xl gento-input text-xs"
                     required
                   />

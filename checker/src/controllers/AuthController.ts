@@ -1,57 +1,48 @@
 import { AuthUseCase } from "../usecases/AuthUseCase";
-import { successResponse, errorResponse } from "../utils/response";
+import { successResponse } from "../utils/response";
 import { AuthContext } from "../middlewares/authMiddleware";
-import { LoginRequest, ChangePasswordRequest } from "../dto/auth.dto";
+import { LoginRequestSchema, ChangePasswordRequestSchema } from "../dto/auth.dto";
+import { ValidationError, UnauthorizedError } from "../utils/errors";
 
 export class AuthController {
-  private authUseCase = new AuthUseCase();
+  constructor(private authUseCase: AuthUseCase) {}
 
   async login(request: Request): Promise<Response> {
-    try {
-      const body = await request.json() as LoginRequest;
-      const { username, password } = body;
-      
-      if (!username || !password) {
-        return errorResponse("Username and password are required", 400);
-      }
-
-      const result = await this.authUseCase.login(username, password);
-      return successResponse(result, "Login successful");
-    } catch (e: any) {
-      return errorResponse(e.message || "Invalid credentials", 401);
+    const body = await request.json().catch(() => ({}));
+    const parsed = LoginRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map(e => e.message).join(", ");
+      throw new ValidationError(msg);
     }
+
+    const { username, password } = parsed.data;
+    const result = await this.authUseCase.login(username, password);
+    return successResponse(result, "Login successful");
   }
 
   async getProfile(admin: AuthContext | null): Promise<Response> {
     if (!admin) {
-      return errorResponse("Unauthorized", 401);
+      throw new UnauthorizedError("Unauthorized");
     }
 
-    try {
-      const profile = await this.authUseCase.getProfile(admin.id);
-      return successResponse(profile, "Profile retrieved successfully");
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to retrieve profile", 400);
-    }
+    const profile = await this.authUseCase.getProfile(admin.id);
+    return successResponse(profile, "Profile retrieved successfully");
   }
 
   async changePassword(request: Request, admin: AuthContext | null): Promise<Response> {
     if (!admin) {
-      return errorResponse("Unauthorized", 401);
+      throw new UnauthorizedError("Unauthorized");
     }
 
-    try {
-      const body = await request.json() as ChangePasswordRequest;
-      const { oldPassword, newPassword } = body;
-
-      if (!oldPassword || !newPassword) {
-        return errorResponse("Old password and new password are required", 400);
-      }
-
-      await this.authUseCase.changePassword(admin.id, oldPassword, newPassword);
-      return successResponse(null, "Password changed successfully");
-    } catch (e: any) {
-      return errorResponse(e.message || "Failed to change password", 400);
+    const body = await request.json().catch(() => ({}));
+    const parsed = ChangePasswordRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map(e => e.message).join(", ");
+      throw new ValidationError(msg);
     }
+
+    const { oldPassword, newPassword } = parsed.data;
+    await this.authUseCase.changePassword(admin.id, oldPassword, newPassword);
+    return successResponse(null, "Password changed successfully");
   }
 }

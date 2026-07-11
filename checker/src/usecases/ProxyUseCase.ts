@@ -1,10 +1,11 @@
-import { ProxyRepository } from "../repositories/ProxyRepository";
+import { IProxyRepository } from "../repositories/interfaces";
 import { ProxyIP } from "../models/ProxyIP";
 import { CreateProxyRequest, UpdateProxyRequest, ImportProxyItem } from "../dto/proxy.dto";
 import { PublicProxyItem } from "../dto/response.dto";
+import { ValidationError, NotFoundError } from "../utils/errors";
 
 export class ProxyUseCase {
-  private proxyRepo = new ProxyRepository();
+  constructor(private proxyRepo: IProxyRepository) {}
 
   getAllProxies(
     page: number,
@@ -15,7 +16,7 @@ export class ProxyUseCase {
   }
 
   createProxy(data: CreateProxyRequest): ProxyIP {
-    if (!data.ip) throw new Error("IP field is required");
+    if (!data.ip) throw new ValidationError("IP field is required");
     const proxyVal = data.proxy || data.ip;
     const portVal = String(data.port || "443");
 
@@ -41,7 +42,7 @@ export class ProxyUseCase {
   updateProxy(id: number, data: UpdateProxyRequest): ProxyIP {
     const existing = this.proxyRepo.findById(id);
     if (!existing) {
-      throw new Error("Proxy not found");
+      throw new NotFoundError("Proxy not found");
     }
 
     const payload: Partial<ProxyIP> = {};
@@ -69,19 +70,19 @@ export class ProxyUseCase {
   deleteProxy(id: number): void {
     const existing = this.proxyRepo.findById(id);
     if (!existing) {
-      throw new Error("Proxy not found");
+      throw new NotFoundError("Proxy not found");
     }
     this.proxyRepo.delete(id);
   }
 
   importFromJSON(list: ImportProxyItem[]): number {
     if (!Array.isArray(list)) {
-      throw new Error("Import data must be a JSON array");
+      throw new ValidationError("Import data must be a JSON array");
     }
 
     const formatted = list.map((item: ImportProxyItem) => {
       if (!item.ip) {
-        throw new Error("Missing required field 'ip' in import items");
+        throw new ValidationError("Missing required field 'ip' in import items");
       }
       return {
         proxy: String(item.proxy || item.ip),
@@ -121,5 +122,56 @@ export class ProxyUseCase {
       grouped[country].push(proxyStr);
     }
     return grouped;
+  }
+
+  async lookupGeoIP(ip: string): Promise<any> {
+    try {
+      // Fetch from ipwho.is (Primary)
+      const res = await fetch(`https://ipwho.is/${ip}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch geo data from primary provider");
+      }
+      const data = await res.json() as any;
+      if (!data || data.success === false) {
+        throw new Error(data?.message || "Invalid IP or lookup failed on primary provider");
+      }
+      return {
+        success: true,
+        country_code: data.country_code,
+        city: data.city,
+        region: data.region,
+        postal: data.postal,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        connection: {
+          asn: data.connection?.asn,
+          org: data.connection?.org || data.connection?.isp
+        }
+      };
+    } catch (e: any) {
+      // Fallback: try freeipapi.com
+      try {
+        const backupRes = await fetch(`https://freeipapi.com/api/json/${ip}`);
+        if (!backupRes.ok) {
+          throw new Error("Failed to fetch geo data from backup provider");
+        }
+        const backupData = await backupRes.json() as any;
+        return {
+          success: true,
+          country_code: backupData.countryCode,
+          city: backupData.cityName,
+          region: backupData.regionName,
+          postal: backupData.zipCode,
+          latitude: backupData.latitude,
+          longitude: backupData.longitude,
+          connection: {
+            asn: backupData.asn,
+            org: backupData.asName
+          }
+        };
+      } catch (backupErr: any) {
+        throw new ValidationError(e.message || "GeoIP lookup failed");
+      }
+    }
   }
 }

@@ -1,11 +1,14 @@
-import { db } from "../../database/database";
+import { Database } from "bun:sqlite";
 import { Domain } from "../models/Domain";
 import { DomainRow } from "../entities/DomainEntity";
 import { CountRow, IdRow } from "../entities/CommonEntity";
+import { IDomainRepository } from "./interfaces";
 
-export class DomainRepository {
+export class DomainRepository implements IDomainRepository {
+  constructor(private db: Database) {}
+
   findAll(): Domain[] {
-    const rows = db.query("SELECT * FROM domains ORDER BY id DESC").all() as DomainRow[];
+    const rows = this.db.query("SELECT * FROM domains ORDER BY id DESC").all() as DomainRow[];
     return rows.map((r) => ({
       id: r.id,
       domain: r.domain,
@@ -15,7 +18,7 @@ export class DomainRepository {
   }
 
   findByDomain(domain: string): Domain | null {
-    const row = db.query("SELECT * FROM domains WHERE domain = ? LIMIT 1").get(domain) as DomainRow | null;
+    const row = this.db.query("SELECT * FROM domains WHERE domain = ? LIMIT 1").get(domain) as DomainRow | null;
     if (!row) return null;
     return {
       id: row.id,
@@ -26,8 +29,8 @@ export class DomainRepository {
   }
 
   create(domain: string): Domain {
-    const result = db.prepare("INSERT INTO domains (domain, is_active) VALUES (?, 1) RETURNING id").get(domain) as IdRow;
-    const row = db.query("SELECT * FROM domains WHERE id = ?").get(result.id) as DomainRow;
+    const result = this.db.prepare("INSERT INTO domains (domain, is_active) VALUES (?, 1) RETURNING id").get(domain) as IdRow;
+    const row = this.db.query("SELECT * FROM domains WHERE id = ?").get(result.id) as DomainRow;
     return {
       id: row.id,
       domain: row.domain,
@@ -37,13 +40,13 @@ export class DomainRepository {
   }
 
   delete(id: number): void {
-    db.query("DELETE FROM domains WHERE id = ?").run(id);
+    this.db.query("DELETE FROM domains WHERE id = ?").run(id);
   }
 
   bulkCreate(domains: string[]): number {
-    const insertDomain = db.prepare("INSERT OR IGNORE INTO domains (domain, is_active) VALUES (?, 1)");
+    const insertDomain = this.db.prepare("INSERT OR IGNORE INTO domains (domain, is_active) VALUES (?, 1)");
     let count = 0;
-    const transaction = db.transaction((list: string[]) => {
+    const transaction = this.db.transaction((list: string[]) => {
       for (const d of list) {
         const clean = d.trim().toLowerCase();
         if (clean) {
@@ -57,12 +60,12 @@ export class DomainRepository {
   }
 
   getPublicList(): string[] {
-    const rows = db.query("SELECT domain FROM domains WHERE is_active = 1").all() as { domain: string }[];
+    const rows = this.db.query("SELECT domain FROM domains WHERE is_active = 1").all() as { domain: string }[];
     return rows.map((r) => r.domain);
   }
 
   count(): number {
-    const result = db.query("SELECT COUNT(*) as count FROM domains").get() as CountRow;
+    const result = this.db.query("SELECT COUNT(*) as count FROM domains").get() as CountRow;
     return result.count;
   }
 }

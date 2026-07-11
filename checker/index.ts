@@ -1,14 +1,16 @@
 import { seed } from './database/seed';
 import { handleApiRoute } from './src/routes';
 import { config } from "./src/utils/config";
+import { logger } from './src/utils/logger';
+import { db } from './database/database';
 
 // Run database init and seed on startup
 try {
-  console.log("⚙️  [System] Running database migrations and seeding...");
+  logger.info("Running database migrations and seeding...", "System");
   await seed();
-  console.log("⚙️  [System] Seeding complete.");
+  logger.info("Seeding complete.", "System");
 } catch (e) {
-  console.error("⚠️  [System] Failed to seed database:", e);
+  logger.error("Failed to seed database", e, "System");
 }
 
 const PORT = config.port;
@@ -21,6 +23,29 @@ const server = Bun.serve({
   }
 });
 
-console.log(`🚀 [LuFeng Checker] Service running on http://0.0.0.0:${server.port}`);
+logger.info(`Service running on http://0.0.0.0:${server.port}`, "System");
+
+// Graceful Shutdown implementation
+const shutdown = async () => {
+  logger.info("Shutdown signal received. Closing resources...", "System");
+  
+  // 1. Stop Bun server
+  server.stop();
+  logger.info("HTTP server stopped accepting new connections.", "System");
+
+  // 2. Close SQLite connection
+  try {
+    db.close();
+    logger.info("SQLite database connection closed safely.", "System");
+  } catch (err) {
+    logger.error("Error closing SQLite connection", err, "System");
+  }
+
+  logger.info("Graceful shutdown complete. Exiting process.", "System");
+  process.exit(0);
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
 
 export default server;

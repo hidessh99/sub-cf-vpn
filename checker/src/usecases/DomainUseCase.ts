@@ -1,21 +1,22 @@
-import { DomainRepository } from "../repositories/DomainRepository";
+import { IDomainRepository } from "../repositories/interfaces";
 import { Domain } from "../models/Domain";
+import { ValidationError } from "../utils/errors";
 
 export class DomainUseCase {
-  private domainRepo = new DomainRepository();
+  constructor(private domainRepo: IDomainRepository) {}
 
   getAllDomains(): Domain[] {
     return this.domainRepo.findAll();
   }
 
   createDomain(domainName: string): Domain {
-    if (!domainName) throw new Error("Domain name is required");
+    if (!domainName) throw new ValidationError("Domain name is required");
     const cleanDomain = domainName.trim().toLowerCase();
     
     // Check duplication
     const existing = this.domainRepo.findByDomain(cleanDomain);
     if (existing) {
-      throw new Error(`Domain '${cleanDomain}' already exists`);
+      throw new ValidationError(`Domain '${cleanDomain}' already exists`);
     }
 
     return this.domainRepo.create(cleanDomain);
@@ -31,7 +32,7 @@ export class DomainUseCase {
 
   importFromJSON(list: string[]): number {
     if (!Array.isArray(list)) {
-      throw new Error("Import data must be a JSON array of strings");
+      throw new ValidationError("Import data must be a JSON array of strings");
     }
     return this.domainRepo.bulkCreate(list);
   }
