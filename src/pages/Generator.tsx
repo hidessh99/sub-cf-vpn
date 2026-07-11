@@ -57,7 +57,10 @@ const Generator: React.FC = () => {
   // Set default domain when domains list is loaded
   useEffect(() => {
     if (domains.length > 0 && !formDomain) {
-      setFormDomain(domains[Math.floor(Math.random() * domains.length)]);
+      const randomBuffer = new Uint32Array(1);
+      window.crypto.getRandomValues(randomBuffer);
+      const randomIndex = randomBuffer[0] % domains.length;
+      setFormDomain(domains[randomIndex]);
     }
   }, [domains, formDomain]);
 
