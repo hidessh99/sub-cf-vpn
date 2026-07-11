@@ -1,5 +1,5 @@
-import React from 'react';
-import { Undo2, Shuffle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Undo2, Shuffle, Search, ChevronDown, Check } from 'lucide-react';
 import { ProxyItem } from '../../types';
 import { generateUUID } from '../../utils/common';
 
@@ -55,6 +55,26 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
   defaultAlias,
 }) => {
   const finalAlias = manualAlias !== null ? manualAlias : defaultAlias;
+
+  const [isBugDropdownOpen, setIsBugDropdownOpen] = useState(false);
+  const [bugSearch, setBugSearch] = useState('');
+  const bugDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        bugDropdownRef.current &&
+        !bugDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsBugDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="gento-card rounded-3xl p-6 flex flex-col flex-grow overflow-y-auto">
@@ -178,19 +198,134 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
         {/* Bug / SNI Selector */}
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Bug</label>
-          <select
-            value={formBug}
-            onChange={(e) => setFormBug(e.target.value)}
-            className="gento-input w-full rounded-xl px-4 py-3 text-xs mb-2 cursor-pointer focus:outline-none"
-          >
-            <option value="">Default (No Bug)</option>
-            <option value="manual">Manual Input</option>
-            {bugList.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+          <div className="relative w-full mb-2" ref={bugDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsBugDropdownOpen(!isBugDropdownOpen)}
+              className="gento-input w-full rounded-xl px-4 py-3 text-xs text-left cursor-pointer flex justify-between items-center focus:outline-none"
+            >
+              <span className="truncate">
+                {formBug === ""
+                  ? "Default (No Bug)"
+                  : formBug === "manual"
+                  ? `Manual: ${formManualBug || "(Not entered)"}`
+                  : formBug}
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
+                  isBugDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {isBugDropdownOpen && (
+              <div className="absolute z-[99] bottom-full left-0 w-full mb-1 bg-slate-950/95 border border-white/10 rounded-2xl shadow-2xl p-1 flex flex-col backdrop-blur-md animate-fade-in">
+                {/* Search Input Box */}
+                <div className="flex items-center gap-2 p-2 border-b border-white/5 flex-shrink-0">
+                  <Search className="h-3.5 w-3.5 text-slate-500" />
+                  <input
+                    type="text"
+                    value={bugSearch}
+                    onChange={(e) => setBugSearch(e.target.value)}
+                    placeholder="Cari bug..."
+                    className="bg-transparent border-none text-slate-200 text-xs w-full focus:outline-none focus:ring-0 p-0"
+                  />
+                  {bugSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setBugSearch("")}
+                      className="text-[10px] text-slate-500 hover:text-white px-1"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Options list */}
+                <div className="max-h-56 overflow-y-auto p-1 space-y-0.5 scrollbar-thin">
+                  {/* Default Option */}
+                  {("Default (No Bug)".toLowerCase().includes(bugSearch.toLowerCase()) ||
+                    !bugSearch) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormBug("");
+                        setIsBugDropdownOpen(false);
+                        setBugSearch("");
+                      }}
+                      className={`w-full px-3 py-2 rounded-xl text-left text-xs flex justify-between items-center hover:bg-white/5 transition-colors ${
+                        formBug === ""
+                          ? "text-purple-400 bg-purple-500/5 font-semibold"
+                          : "text-slate-300"
+                      }`}
+                    >
+                      <span>Default (No Bug)</span>
+                      {formBug === "" && <Check className="h-3.5 w-3.5 text-purple-400" />}
+                    </button>
+                  )}
+
+                  {/* Manual Option */}
+                  {("Input Manual / Custom".toLowerCase().includes(bugSearch.toLowerCase()) ||
+                    !bugSearch) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormBug("manual");
+                        setIsBugDropdownOpen(false);
+                        setBugSearch("");
+                      }}
+                      className={`w-full px-3 py-2 rounded-xl text-left text-xs flex justify-between items-center hover:bg-white/5 transition-colors ${
+                        formBug === "manual"
+                          ? "text-purple-400 bg-purple-500/5 font-semibold"
+                          : "text-slate-300"
+                      }`}
+                    >
+                      <span>Input Manual / Custom</span>
+                      {formBug === "manual" && <Check className="h-3.5 w-3.5 text-purple-400" />}
+                    </button>
+                  )}
+
+                  {/* Filtered Bug List */}
+                  {bugList
+                    .filter((b) => b.toLowerCase().includes(bugSearch.toLowerCase()))
+                    .map((b) => {
+                      const isSelected = formBug === b;
+                      return (
+                        <button
+                          key={b}
+                          type="button"
+                          onClick={() => {
+                            setFormBug(b);
+                            setIsBugDropdownOpen(false);
+                            setBugSearch("");
+                          }}
+                          className={`w-full px-3 py-2 rounded-xl text-left text-xs flex justify-between items-center hover:bg-white/5 transition-colors truncate ${
+                            isSelected
+                              ? "text-purple-400 bg-purple-500/5 font-semibold"
+                              : "text-slate-300"
+                          }`}
+                        >
+                          <span className="truncate">{b}</span>
+                          {isSelected && (
+                            <Check className="h-3.5 w-3.5 text-purple-400 flex-shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+
+                  {/* No options found */}
+                  {bugList.filter((b) => b.toLowerCase().includes(bugSearch.toLowerCase()))
+                    .length === 0 &&
+                    !("Default (No Bug)".toLowerCase().includes(bugSearch.toLowerCase())) &&
+                    !("Input Manual / Custom".toLowerCase().includes(bugSearch.toLowerCase())) && (
+                      <div className="py-6 text-center text-xs text-slate-500">
+                        Tidak ditemukan. Pilih 'Input Manual' untuk custom bug.
+                      </div>
+                    )}
+                </div>
+              </div>
+            )}
+          </div>
           {formBug === 'manual' && (
             <input
               type="text"
