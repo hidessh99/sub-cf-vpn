@@ -1,7 +1,5 @@
+import { Context } from "hono";
 import { IProxyRepository, IDomainRepository, IBugRepository } from "../repositories/interfaces";
-import { successResponse } from "../utils/response";
-import { AuthContext } from "../middlewares/authMiddleware";
-import { UnauthorizedError } from "../utils/errors";
 
 export class DashboardController {
   constructor(
@@ -10,17 +8,24 @@ export class DashboardController {
     private bugRepo: IBugRepository
   ) {}
 
-  async getStats(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) throw new UnauthorizedError("Unauthorized");
+  async getStats(c: Context): Promise<Response> {
+    const admin = c.get("admin");
+    if (!admin) {
+      return c.json({ success: false, message: "Unauthorized", error: null }, 401);
+    }
 
     const totalProxies = this.proxyRepo.count();
     const totalDomains = this.domainRepo.count();
     const totalBugs = this.bugRepo.count();
 
-    return successResponse({
-      proxies: totalProxies,
-      domains: totalDomains,
-      bugs: totalBugs,
-    }, "Dashboard stats retrieved successfully");
+    return c.json({
+      success: true,
+      message: "Dashboard stats retrieved successfully",
+      data: {
+        proxies: totalProxies,
+        domains: totalDomains,
+        bugs: totalBugs,
+      }
+    });
   }
 }

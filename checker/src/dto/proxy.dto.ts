@@ -30,4 +30,6 @@ export const ImportProxyItemSchema = CreateProxyRequestSchema;
 
 export type ImportProxyItem = z.infer<typeof ImportProxyItemSchema>;
 
-export const ImportProxyListSchema = z.array(ImportProxyItemSchema);
+export const ImportProxyListSchema = z.object({
+  proxies: z.array(ImportProxyItemSchema)
+});

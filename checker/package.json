@@ -10,7 +10,8 @@
     "@types/bun": "latest"
   },
   "dependencies": {
-    "jose": "^6.2.3",
+    "@hono/zod-validator": "^0.8.0",
+    "hono": "^4.12.29",
     "zod": "^3.23.8"
   }
 }

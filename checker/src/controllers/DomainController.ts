@@ -1,55 +1,51 @@
+import { Context } from "hono";
 import { DomainUseCase } from "../usecases/DomainUseCase";
-import { successResponse, jsonResponse } from "../utils/response";
-import { AuthContext } from "../middlewares/authMiddleware";
-import { CreateDomainRequestSchema } from "../dto/domain.dto";
-import { ValidationError, UnauthorizedError } from "../utils/errors";
-import { z } from "zod";
+import { CreateDomainRequest } from "../dto/domain.dto";
 
 export class DomainController {
   constructor(private domainUseCase: DomainUseCase) {}
 
-  async getDomains(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) throw new UnauthorizedError("Unauthorized");
+  async getDomains(c: Context): Promise<Response> {
     const list = this.domainUseCase.getAllDomains();
-    return successResponse(list, "Domains retrieved successfully");
+    return c.json({
+      success: true,
+      message: "Domains retrieved successfully",
+      data: list
+    });
   }
 
-  async createDomain(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) throw new UnauthorizedError("Unauthorized");
-
-    const body = await request.json().catch(() => ({}));
-    const parsed = CreateDomainRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      const msg = parsed.error.errors.map(e => e.message).join(", ");
-      throw new ValidationError(msg);
-    }
-
-    const { domain } = parsed.data;
+  async createDomain(c: Context): Promise<Response> {
+    const { domain } = (c.req.valid as any)("json") as CreateDomainRequest;
     const result = this.domainUseCase.createDomain(domain);
-    return successResponse(result, "Domain created successfully", 201);
+    return c.json({
+      success: true,
+      message: "Domain created successfully",
+      data: result
+    }, 201);
   }
 
-  async deleteDomain(id: number, admin: AuthContext | null): Promise<Response> {
-    if (!admin) throw new UnauthorizedError("Unauthorized");
+  async deleteDomain(c: Context): Promise<Response> {
+    const id = parseInt(c.req.param("id"), 10);
     this.domainUseCase.deleteDomain(id);
-    return successResponse(null, "Domain deleted successfully");
+    return c.json({
+      success: true,
+      message: "Domain deleted successfully",
+      data: null
+    });
   }
 
-  async getPublicDomains(): Promise<Response> {
+  async getPublicDomains(c: Context): Promise<Response> {
     const list = this.domainUseCase.getPublicDomainList();
-    return jsonResponse(list);
+    return c.json(list);
   }
 
-  async importDomains(request: Request, admin: AuthContext | null): Promise<Response> {
-    if (!admin) throw new UnauthorizedError("Unauthorized");
-
-    const body = await request.json().catch(() => []);
-    const parsed = z.array(z.string().min(1)).safeParse(body);
-    if (!parsed.success) {
-      throw new ValidationError("Import data must be a JSON array of non-empty strings");
-    }
-
-    const count = this.domainUseCase.importFromJSON(parsed.data);
-    return successResponse({ imported: count }, `Successfully imported ${count} domains`);
+  async importDomains(c: Context): Promise<Response> {
+    const data = (c.req.valid as any)("json") as string[];
+    const count = this.domainUseCase.importFromJSON(data);
+    return c.json({
+      success: true,
+      message: `Successfully imported ${count} domains`,
+      data: { imported: count }
+    });
   }
 }

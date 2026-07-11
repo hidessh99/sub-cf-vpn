@@ -1,48 +1,46 @@
+import { Context } from "hono";
 import { AuthUseCase } from "../usecases/AuthUseCase";
-import { successResponse } from "../utils/response";
-import { AuthContext } from "../middlewares/authMiddleware";
-import { LoginRequestSchema, ChangePasswordRequestSchema } from "../dto/auth.dto";
-import { ValidationError, UnauthorizedError } from "../utils/errors";
+import { LoginRequest, ChangePasswordRequest } from "../dto/auth.dto";
 
 export class AuthController {
   constructor(private authUseCase: AuthUseCase) {}
 
-  async login(request: Request): Promise<Response> {
-    const body = await request.json().catch(() => ({}));
-    const parsed = LoginRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      const msg = parsed.error.errors.map(e => e.message).join(", ");
-      throw new ValidationError(msg);
-    }
-
-    const { username, password } = parsed.data;
+  async login(c: Context): Promise<Response> {
+    const { username, password } = (c.req.valid as any)("json") as LoginRequest;
     const result = await this.authUseCase.login(username, password);
-    return successResponse(result, "Login successful");
+    return c.json({
+      success: true,
+      message: "Login successful",
+      data: result
+    });
   }
 
-  async getProfile(admin: AuthContext | null): Promise<Response> {
+  async getProfile(c: Context): Promise<Response> {
+    const admin = c.get("admin");
     if (!admin) {
-      throw new UnauthorizedError("Unauthorized");
+      return c.json({ success: false, message: "Unauthorized", error: null }, 401);
     }
 
     const profile = await this.authUseCase.getProfile(admin.id);
-    return successResponse(profile, "Profile retrieved successfully");
+    return c.json({
+      success: true,
+      message: "Profile retrieved successfully",
+      data: profile
+    });
   }
 
-  async changePassword(request: Request, admin: AuthContext | null): Promise<Response> {
+  async changePassword(c: Context): Promise<Response> {
+    const admin = c.get("admin");
     if (!admin) {
-      throw new UnauthorizedError("Unauthorized");
+      return c.json({ success: false, message: "Unauthorized", error: null }, 401);
     }
 
-    const body = await request.json().catch(() => ({}));
-    const parsed = ChangePasswordRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      const msg = parsed.error.errors.map(e => e.message).join(", ");
-      throw new ValidationError(msg);
-    }
-
-    const { oldPassword, newPassword } = parsed.data;
+    const { oldPassword, newPassword } = (c.req.valid as any)("json") as ChangePasswordRequest;
     await this.authUseCase.changePassword(admin.id, oldPassword, newPassword);
-    return successResponse(null, "Password changed successfully");
+    return c.json({
+      success: true,
+      message: "Password changed successfully",
+      data: null
+    });
   }
 }

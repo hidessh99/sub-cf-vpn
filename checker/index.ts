@@ -1,5 +1,5 @@
 import { seed } from './database/seed';
-import { handleApiRoute } from './src/routes';
+import { app } from './src/app';
 import { config } from "./src/utils/config";
 import { logger } from './src/utils/logger';
 import { db } from './database/database';
@@ -17,10 +17,7 @@ const PORT = config.port;
 
 const server = Bun.serve({
   port: PORT,
-  async fetch(request: Request): Promise<Response> {
-    // Forward all request paths to the centralized handleApiRoute handler
-    return handleApiRoute(request);
-  }
+  fetch: app.fetch
 });
 
 logger.info(`Service running on http://0.0.0.0:${server.port}`, "System");
