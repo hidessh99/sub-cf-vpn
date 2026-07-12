@@ -1,10 +1,10 @@
 import { Context } from "hono";
-import { BugUseCase } from "../usecases/BugUseCase";
+import { IBugUseCase } from "../usecases/interfaces";
 import { CreateBugRequest } from "../dto/bug.dto";
 import { logger } from "../utils/logger";
 
 export class BugController {
-  constructor(private bugUseCase: BugUseCase) {}
+  constructor(private bugUseCase: IBugUseCase) {}
 
   async getBugs(c: Context): Promise<Response> {
     const list = this.bugUseCase.getAllBugs();
@@ -16,7 +16,7 @@ export class BugController {
   }
 
   async createBug(c: Context): Promise<Response> {
-    const { hostname } = (c.req.valid as any)("json") as CreateBugRequest;
+    const { hostname } = c.req.valid("json" as never) as CreateBugRequest;
     const result = this.bugUseCase.createBug(hostname);
     return c.json({
       success: true,
@@ -45,7 +45,7 @@ export class BugController {
   }
 
   async importBugs(c: Context): Promise<Response> {
-    const data = (c.req.valid as any)("json") as string[];
+    const data = c.req.valid("json" as never) as string[];
     const count = this.bugUseCase.importFromJSON(data);
     return c.json({
       success: true,

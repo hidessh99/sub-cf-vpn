@@ -2,8 +2,9 @@ import { IDomainRepository } from "../repositories/interfaces";
 import { Domain } from "../models/Domain";
 import { ValidationError } from "../utils/errors";
 import { logger } from "../utils/logger";
+import { IDomainUseCase } from "./interfaces";
 
-export class DomainUseCase {
+export class DomainUseCase implements IDomainUseCase {
   constructor(private domainRepo: IDomainRepository) {}
 
   getAllDomains(): Domain[] {

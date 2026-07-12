@@ -4,9 +4,15 @@ import { CreateProxyRequest, UpdateProxyRequest, ImportProxyItem } from "../dto/
 import { PublicProxyItem } from "../dto/response.dto";
 import { ValidationError, NotFoundError } from "../utils/errors";
 import { logger } from "../utils/logger";
+import { IProxyUseCase } from "./interfaces";
+import { IGeoIPService, GeoIPResult } from "../services/GeoIPService";
+import { runHealthCheck } from "../cron/proxyHealthCheck";
 
-export class ProxyUseCase {
-  constructor(private proxyRepo: IProxyRepository) {}
+export class ProxyUseCase implements IProxyUseCase {
+  constructor(
+    private proxyRepo: IProxyRepository,
+    private geoIPService: IGeoIPService
+  ) {}
 
   getAllProxies(
     page: number,
@@ -134,56 +140,11 @@ export class ProxyUseCase {
     return grouped;
   }
 
-  async lookupGeoIP(ip: string): Promise<any> {
-    try {
-      // Fetch from ipwho.is (Primary)
-      const res = await fetch(`https://ipwho.is/${ip}`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch geo data from primary provider");
-      }
-      const data = await res.json() as any;
-      if (!data || data.success === false) {
-        throw new Error(data?.message || "Invalid IP or lookup failed on primary provider");
-      }
-      return {
-        success: true,
-        country_code: data.country_code,
-        city: data.city,
-        region: data.region,
-        postal: data.postal,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        connection: {
-          asn: data.connection?.asn,
-          org: data.connection?.org || data.connection?.isp
-        }
-      };
-    } catch (e: any) {
-      logger.warn(`GeoIP primary provider failed for ${ip}: ${e.message}, trying fallback...`, "ProxyUseCase");
-      // Fallback: try freeipapi.com
-      try {
-        const backupRes = await fetch(`https://freeipapi.com/api/json/${ip}`);
-        if (!backupRes.ok) {
-          throw new Error("Failed to fetch geo data from backup provider");
-        }
-        const backupData = await backupRes.json() as any;
-        return {
-          success: true,
-          country_code: backupData.countryCode,
-          city: backupData.cityName,
-          region: backupData.regionName,
-          postal: backupData.zipCode,
-          latitude: backupData.latitude,
-          longitude: backupData.longitude,
-          connection: {
-            asn: backupData.asn,
-            org: backupData.asName
-          }
-        };
-      } catch (backupErr: any) {
-        logger.error(`GeoIP lookup failed for ${ip} (both providers)`, backupErr, "ProxyUseCase");
-        throw new ValidationError(e.message || "GeoIP lookup failed");
-      }
-    }
+  async lookupGeoIP(ip: string): Promise<GeoIPResult> {
+    return this.geoIPService.lookup(ip);
+  }
+
+  syncHealthCheck(): void {
+    runHealthCheck(this.proxyRepo);
   }
 }

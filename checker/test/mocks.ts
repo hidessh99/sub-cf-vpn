@@ -222,3 +222,23 @@ export class MockProxyRepository implements IProxyRepository {
     return originalCount - this.db.length;
   }
 }
+
+import { IGeoIPService, GeoIPResult } from "../src/services/GeoIPService";
+
+export class MockGeoIPService implements IGeoIPService {
+  async lookup(ip: string): Promise<GeoIPResult> {
+    return {
+      success: true,
+      country_code: "US",
+      city: "Mountain View",
+      region: "California",
+      postal: "94043",
+      latitude: "37.422",
+      longitude: "-122.084",
+      connection: {
+        asn: 15169,
+        org: "Google LLC"
+      }
+    };
+  }
+}

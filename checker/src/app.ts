@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { compress } from "hono/compress";
-import { logger as honoLogger } from "hono/logger";
 import { timeout } from "hono/timeout";
 import { HTTPException } from "hono/http-exception";
+import { requestId } from "hono/request-id";
 import { AppError } from "./utils/errors";
 import { logger } from "./utils/logger";
 import { HonoEnv } from "./middlewares/authMiddleware";
@@ -22,23 +22,84 @@ import { systemRoutes } from "./routes/system.routes";
 const app = new Hono<HonoEnv>();
 
 // Register global middlewares
+app.use("*", requestId());
 app.use("*", compress());
-app.use("*", honoLogger((message: string) => {
-  logger.info(message, "HTTP");
-}));
+app.use("*", async (c, next) => {
+  const reqId = c.get("requestId") || "";
+  const method = c.req.method;
+  const path = c.req.path;
+  logger.info(`[ReqId: ${reqId}] --> ${method} ${path}`, "HTTP");
+  const start = Date.now();
+  await next();
+  const duration = Date.now() - start;
+  const status = c.res.status;
+  logger.info(`[ReqId: ${reqId}] <-- ${method} ${path} ${status} - ${duration}ms`, "HTTP");
+});
+
+// Global Security Headers Middleware
+app.use("*", async (c, next) => {
+  c.header("X-Content-Type-Options", "nosniff");
+  c.header("X-Frame-Options", "DENY");
+  c.header("X-XSS-Protection", "1; mode=block");
+  c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (process.env.NODE_ENV === "production") {
+    c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  await next();
+});
 
 const customTimeoutException = new HTTPException(408, {
   message: "Request timeout. Please try again later.",
 });
 app.use("*", timeout(30000, customTimeoutException));
 
+// Configure CORS origin list for admin routes from environment
+const adminOrigins = process.env.ADMIN_ALLOWED_ORIGINS
+  ? process.env.ADMIN_ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  : ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"];
+
+// Public CORS setup (Wildcard allowed)
 app.use(
-  "*",
+  "/api/v1/public/*",
   cors({
     origin: "*",
+    allowMethods: ["GET", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+    maxAge: 86400,
+  })
+);
+
+app.use(
+  "/api/check*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+    maxAge: 86400,
+  })
+);
+
+app.use(
+  "/health",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "OPTIONS"],
+    maxAge: 86400,
+  })
+);
+
+// Admin CORS setup (Restricted Origins)
+app.use(
+  "/api/v1/*",
+  cors({
+    origin: (origin) => {
+      if (!origin) return adminOrigins[0];
+      return adminOrigins.includes(origin) ? origin : adminOrigins[0];
+    },
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     maxAge: 86400,
+    credentials: true,
   })
 );
 

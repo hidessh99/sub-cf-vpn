@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeEach } from "bun:test";
 import { ProxyUseCase } from "../src/usecases/ProxyUseCase";
-import { MockProxyRepository } from "./mocks";
+import { MockProxyRepository, MockGeoIPService } from "./mocks";
 import { ValidationError, NotFoundError } from "../src/utils/errors";
 
 describe("ProxyUseCase", () => {
@@ -9,7 +9,8 @@ describe("ProxyUseCase", () => {
 
   beforeEach(() => {
     proxyRepo = new MockProxyRepository();
-    proxyUseCase = new ProxyUseCase(proxyRepo);
+    const geoIPService = new MockGeoIPService();
+    proxyUseCase = new ProxyUseCase(proxyRepo, geoIPService);
   });
 
   describe("createProxy", () => {

@@ -1,7 +1,6 @@
 import { Database } from "bun:sqlite";
 import { Bug } from "../models/Bug";
-import { BugRow } from "../entities/BugEntity";
-import { CountRow, IdRow } from "../entities/CommonEntity";
+import { BugRow, CountRow, IdRow } from "../types/db";
 import { IBugRepository } from "./interfaces";
 
 export class BugRepository implements IBugRepository {
@@ -50,8 +49,8 @@ export class BugRepository implements IBugRepository {
       for (const b of list) {
         const clean = b.trim().toLowerCase();
         if (clean) {
-          insertBug.run(clean);
-          count++;
+          const result = insertBug.run(clean) as { changes: number };
+          count += result.changes;
         }
       }
     });

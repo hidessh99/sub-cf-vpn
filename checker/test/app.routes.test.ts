@@ -9,7 +9,10 @@ describe("Hono App Routing Integration", () => {
     expect(body).toEqual({
       status: "ok",
       service: "lufeng-vpn-checker",
-      runtime: "bun"
+      runtime: "bun",
+      details: {
+        database: "ok"
+      }
     });
   });
 

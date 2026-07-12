@@ -1,12 +1,12 @@
 import { Context } from "hono";
-import { ProxyUseCase } from "../usecases/ProxyUseCase";
-import { runHealthCheck } from "../cron/proxyHealthCheck";
+import { IProxyUseCase } from "../usecases/interfaces";
 import { checkProxy } from "../utils/checkProxy";
 import { CreateProxyRequest, UpdateProxyRequest, ImportProxyItem } from "../dto/proxy.dto";
 import { logger } from "../utils/logger";
+import { isPrivateIP } from "../utils/ipValidator";
 
 export class ProxyController {
-  constructor(private proxyUseCase: ProxyUseCase) {}
+  constructor(private proxyUseCase: IProxyUseCase) {}
 
   async getProxies(c: Context): Promise<Response> {
     let page = parseInt(c.req.query("page") || "1", 10);
@@ -36,7 +36,7 @@ export class ProxyController {
   }
 
   async createProxy(c: Context): Promise<Response> {
-    const data = (c.req.valid as any)("json") as CreateProxyRequest;
+    const data = c.req.valid("json" as never) as CreateProxyRequest;
     const proxy = this.proxyUseCase.createProxy(data);
     return c.json({
       success: true,
@@ -51,7 +51,7 @@ export class ProxyController {
       logger.warn(`updateProxy failed - invalid ID: ${c.req.param("id")}`, "ProxyController");
       return c.json({ success: false, message: "Invalid ID parameter", error: null }, 400);
     }
-    const data = (c.req.valid as any)("json") as UpdateProxyRequest;
+    const data = c.req.valid("json" as never) as UpdateProxyRequest;
     const proxy = this.proxyUseCase.updateProxy(id, data);
     return c.json({
       success: true,
@@ -75,7 +75,7 @@ export class ProxyController {
   }
 
   async importProxies(c: Context): Promise<Response> {
-    const { proxies } = (c.req.valid as any)("json") as { proxies: ImportProxyItem[] };
+    const { proxies } = c.req.valid("json" as never) as { proxies: ImportProxyItem[] };
     const count = this.proxyUseCase.importFromJSON(proxies);
     return c.json({
       success: true,
@@ -89,13 +89,13 @@ export class ProxyController {
     return c.json(list);
   }
 
-  async PublicProxi(c: Context): Promise<Response> {
+  async getPublicProxiesGrouped(c: Context): Promise<Response> {
     const list = this.proxyUseCase.getPublicProxyListGrouped();
     return c.json(list);
   }
 
   async syncHealth(c: Context): Promise<Response> {
-    runHealthCheck();
+    this.proxyUseCase.syncHealthCheck();
     return c.json({
       success: true,
       message: "Proxy health check started in the background",
@@ -118,10 +118,16 @@ export class ProxyController {
     }
 
     const list = ipsString.split(",").map(item => item.trim()).filter(Boolean);
-    const tasks = list.map(item => {
+    const tasks = list.map(async (item) => {
       const parts = item.split(":");
       const ip = parts[0];
       const port = parseInt(parts[1] || "443", 10);
+      
+      if (isPrivateIP(ip)) {
+        logger.warn(`checkProxies blocked private IP range check: ${ip}:${port}`, "ProxyController");
+        return { ip, port, proxyip: false, latency: 0 };
+      }
+      
       return checkProxy(ip, port, 2500);
     });
 
@@ -137,6 +143,11 @@ export class ProxyController {
     if (!ip) {
       logger.warn("geoipLookup failed - IP address is missing", "ProxyController");
       return c.json({ success: false, message: "IP address parameter is required", error: null }, 400);
+    }
+
+    if (isPrivateIP(ip as string)) {
+      logger.warn(`geoipLookup blocked private IP range lookup: ${ip}`, "ProxyController");
+      return c.json({ success: false, message: "Invalid public IP address", error: null }, 400);
     }
 
     const data = await this.proxyUseCase.lookupGeoIP(ip as string);

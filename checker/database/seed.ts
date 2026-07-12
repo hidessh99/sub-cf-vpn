@@ -2,6 +2,7 @@ import { db, initDatabase } from "./database";
 import { join } from "node:path";
 import { config } from "../src/utils/config";
 import { logger } from "../src/utils/logger";
+import { hashPassword } from "../src/utils/password";
 
 export async function seed() {
   // Ensure tables exist
@@ -11,12 +12,8 @@ export async function seed() {
   const adminCountResult = db.query("SELECT COUNT(*) as count FROM admins").get() as { count: number };
   if (adminCountResult.count === 0) {
     const username = config.admin.username;
-    const passwordPlain = config.admin.password;
-    const passwordHash = await Bun.password.hash(passwordPlain, {
-      algorithm: "argon2id",
-      memoryCost: 65536,
-      timeCost: 2,
-    });
+    const passwordPlain = config.admin.password || "admin123";
+    const passwordHash = await hashPassword(passwordPlain);
 
     db.query("INSERT INTO admins (username, password) VALUES (?, ?)").run(username, passwordHash);
     logger.info("Created default admin user.", "Seed");

@@ -1,14 +1,12 @@
 import { Context } from "hono";
-import { DashboardUseCase } from "../usecases/DashboardUseCase";
-import { logger } from "../utils/logger";
+import { IDashboardUseCase } from "../usecases/interfaces";
 
 export class DashboardController {
-  constructor(private dashboardUseCase: DashboardUseCase) {}
+  constructor(private dashboardUseCase: IDashboardUseCase) {}
 
   async getStats(c: Context): Promise<Response> {
     const admin = c.get("admin");
     if (!admin) {
-      logger.warn("getStats attempt without authorization", "DashboardController");
       return c.json({ success: false, message: "Unauthorized", error: null }, 401);
     }
 
