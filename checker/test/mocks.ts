@@ -229,16 +229,14 @@ export class MockGeoIPService implements IGeoIPService {
   async lookup(ip: string): Promise<GeoIPResult> {
     return {
       success: true,
-      country_code: "US",
+      asn: 15169,
+      as_organization: "Google LLC",
+      country: "US",
       city: "Mountain View",
       region: "California",
-      postal: "94043",
+      postal_code: "94043",
       latitude: "37.422",
       longitude: "-122.084",
-      connection: {
-        asn: 15169,
-        org: "Google LLC"
-      }
     };
   }
 }

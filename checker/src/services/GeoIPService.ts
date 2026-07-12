@@ -4,16 +4,14 @@ import { logger } from "../utils/logger";
 
 export interface GeoIPResult {
   success: boolean;
-  country_code: string;
-  city: string;
-  region: string;
-  postal: string;
-  latitude: string;
-  longitude: string;
-  connection: {
-    asn: number | null;
-    org: string | null;
-  };
+  asn: number | null;
+  as_organization: string | null;
+  country: string | null;
+  city: string | null;
+  region: string | null;
+  postal_code: string | null;
+  latitude: string | null;
+  longitude: string | null;
 }
 
 export interface IGeoIPService {
@@ -41,16 +39,14 @@ export class GeoIPService implements IGeoIPService {
       }
       return {
         success: true,
-        country_code: String(data.country_code || "UNK"),
+        asn: data.connection?.asn ? Number(data.connection.asn) : null,
+        as_organization: String(data.connection?.org || data.connection?.isp || ""),
+        country: String(data.country_code || "UNK"),
         city: String(data.city || ""),
         region: String(data.region || ""),
-        postal: String(data.postal || ""),
+        postal_code: String(data.postal || ""),
         latitude: String(data.latitude || ""),
         longitude: String(data.longitude || ""),
-        connection: {
-          asn: data.connection?.asn ? Number(data.connection.asn) : null,
-          org: String(data.connection?.org || data.connection?.isp || ""),
-        },
       };
     } catch (e: any) {
       logger.warn(`GeoIP primary provider failed for ${cleanIp}: ${e.message}, trying fallback...`, "GeoIPService");
@@ -63,16 +59,14 @@ export class GeoIPService implements IGeoIPService {
         const backupData = (await backupRes.json()) as any;
         return {
           success: true,
-          country_code: String(backupData.countryCode || "UNK"),
+          asn: backupData.asn ? Number(backupData.asn) : null,
+          as_organization: String(backupData.asName || ""),
+          country: String(backupData.countryCode || "UNK"),
           city: String(backupData.cityName || ""),
           region: String(backupData.regionName || ""),
-          postal: String(backupData.zipCode || ""),
+          postal_code: String(backupData.zipCode || ""),
           latitude: String(backupData.latitude || ""),
           longitude: String(backupData.longitude || ""),
-          connection: {
-            asn: backupData.asn ? Number(backupData.asn) : null,
-            org: String(backupData.asName || ""),
-          },
         };
       } catch (backupErr: any) {
         logger.error(`GeoIP lookup failed for ${cleanIp} (both providers)`, backupErr, "GeoIPService");
