@@ -1,4 +1,4 @@
-import { isPrivateIP } from "../utils/ipValidator";
+import { isPrivateIP, extractIP } from "../utils/ipValidator";
 import { ValidationError } from "../utils/errors";
 import { logger } from "../utils/logger";
 
@@ -22,14 +22,16 @@ export interface IGeoIPService {
 
 export class GeoIPService implements IGeoIPService {
   async lookup(ip: string): Promise<GeoIPResult> {
-    if (isPrivateIP(ip)) {
-      logger.warn(`GeoIPService blocked lookup for private IP: ${ip}`, "GeoIPService");
+    const cleanIp = extractIP(ip);
+
+    if (isPrivateIP(cleanIp)) {
+      logger.warn(`GeoIPService blocked lookup for private IP: ${cleanIp}`, "GeoIPService");
       throw new ValidationError("Cannot lookup GeoIP for private IP addresses");
     }
 
     try {
       // Fetch from ipwho.is (Primary)
-      const res = await fetch(`https://ipwho.is/${ip}`);
+      const res = await fetch(`https://ipwho.is/${cleanIp}`);
       if (!res.ok) {
         throw new Error("Failed to fetch geo data from primary provider");
       }
@@ -51,10 +53,10 @@ export class GeoIPService implements IGeoIPService {
         },
       };
     } catch (e: any) {
-      logger.warn(`GeoIP primary provider failed for ${ip}: ${e.message}, trying fallback...`, "GeoIPService");
+      logger.warn(`GeoIP primary provider failed for ${cleanIp}: ${e.message}, trying fallback...`, "GeoIPService");
       // Fallback: try freeipapi.com
       try {
-        const backupRes = await fetch(`https://freeipapi.com/api/json/${ip}`);
+        const backupRes = await fetch(`https://freeipapi.com/api/json/${cleanIp}`);
         if (!backupRes.ok) {
           throw new Error("Failed to fetch geo data from backup provider");
         }
@@ -73,7 +75,7 @@ export class GeoIPService implements IGeoIPService {
           },
         };
       } catch (backupErr: any) {
-        logger.error(`GeoIP lookup failed for ${ip} (both providers)`, backupErr, "GeoIPService");
+        logger.error(`GeoIP lookup failed for ${cleanIp} (both providers)`, backupErr, "GeoIPService");
         throw new ValidationError(e.message || "GeoIP lookup failed");
       }
     }
