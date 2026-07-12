@@ -77,5 +77,12 @@ export function initDatabase() {
     );
   `);
 
+  // Create indexes for performance optimization
+  db.run("CREATE INDEX IF NOT EXISTS idx_proxies_country ON proxies(country);");
+  db.run("CREATE INDEX IF NOT EXISTS idx_proxies_is_active ON proxies(is_active);");
+  db.run("CREATE INDEX IF NOT EXISTS idx_proxies_ip ON proxies(ip);");
+  db.run("CREATE INDEX IF NOT EXISTS idx_domains_domain ON domains(domain);");
+  db.run("CREATE INDEX IF NOT EXISTS idx_bugs_hostname ON bugs(hostname);");
+
   logger.info("SQLite initialized successfully.", "Database");
 }

@@ -1,13 +1,12 @@
 import { Context } from "hono";
-import { AuthUseCase } from "../usecases/AuthUseCase";
+import { IAuthUseCase } from "../usecases/interfaces";
 import { LoginRequest, ChangePasswordRequest } from "../dto/auth.dto";
-import { logger } from "../utils/logger";
 
 export class AuthController {
-  constructor(private authUseCase: AuthUseCase) {}
+  constructor(private authUseCase: IAuthUseCase) {}
 
   async login(c: Context): Promise<Response> {
-    const { username, password } = (c.req.valid as any)("json") as LoginRequest;
+    const { username, password } = c.req.valid("json" as never) as LoginRequest;
     const result = await this.authUseCase.login(username, password);
     return c.json({
       success: true,
@@ -19,7 +18,6 @@ export class AuthController {
   async getProfile(c: Context): Promise<Response> {
     const admin = c.get("admin");
     if (!admin) {
-      logger.warn("getProfile attempt without authorization", "AuthController");
       return c.json({ success: false, message: "Unauthorized", error: null }, 401);
     }
 
@@ -34,11 +32,10 @@ export class AuthController {
   async changePassword(c: Context): Promise<Response> {
     const admin = c.get("admin");
     if (!admin) {
-      logger.warn("changePassword attempt without authorization", "AuthController");
       return c.json({ success: false, message: "Unauthorized", error: null }, 401);
     }
 
-    const { oldPassword, newPassword } = (c.req.valid as any)("json") as ChangePasswordRequest;
+    const { oldPassword, newPassword } = c.req.valid("json" as never) as ChangePasswordRequest;
     await this.authUseCase.changePassword(admin.id, oldPassword, newPassword);
     return c.json({
       success: true,

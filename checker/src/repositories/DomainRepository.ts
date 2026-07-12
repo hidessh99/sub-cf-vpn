@@ -1,7 +1,6 @@
 import { Database } from "bun:sqlite";
 import { Domain } from "../models/Domain";
-import { DomainRow } from "../entities/DomainEntity";
-import { CountRow, IdRow } from "../entities/CommonEntity";
+import { DomainRow, CountRow, IdRow } from "../types/db";
 import { IDomainRepository } from "./interfaces";
 
 export class DomainRepository implements IDomainRepository {
@@ -50,8 +49,8 @@ export class DomainRepository implements IDomainRepository {
       for (const d of list) {
         const clean = d.trim().toLowerCase();
         if (clean) {
-          insertDomain.run(clean);
-          count++;
+          const result = insertDomain.run(clean) as { changes: number };
+          count += result.changes;
         }
       }
     });

@@ -1,7 +1,6 @@
 import { Database } from "bun:sqlite";
 import { ProxyIP } from "../models/ProxyIP";
-import { ProxyRow } from "../entities/ProxyEntity";
-import { CountRow, IdRow } from "../entities/CommonEntity";
+import { ProxyRow, CountRow, IdRow } from "../types/db";
 import { PublicProxyItem } from "../dto/response.dto";
 import { IProxyRepository } from "./interfaces";
 
@@ -85,7 +84,11 @@ export class ProxyRepository implements IProxyRepository {
       $is_active: p.is_active ? 1 : 0
     }) as IdRow;
 
-    return this.findById(result.id)!;
+    const created = this.findById(result.id);
+    if (!created) {
+      throw new Error(`Failed to retrieve newly created proxy with id ${result.id}`);
+    }
+    return created;
   }
 
   update(id: number, p: Partial<ProxyIP>): ProxyIP {
@@ -124,7 +127,11 @@ export class ProxyRepository implements IProxyRepository {
       this.db.prepare(sql).run({ ...values, $id: id });
     }
 
-    return this.findById(id)!;
+    const updated = this.findById(id);
+    if (!updated) {
+      throw new Error(`Failed to retrieve updated proxy with id ${id}`);
+    }
+    return updated;
   }
 
   delete(id: number): void {
@@ -224,6 +231,9 @@ export class ProxyRepository implements IProxyRepository {
 
   bulkDelete(ids: number[]): number {
     if (ids.length === 0) return 0;
+    if (ids.length > 1000) {
+      throw new Error("Bulk delete limit exceeded. Cannot delete more than 1000 items at once.");
+    }
     const placeholders = ids.map(() => '?').join(',');
     this.db.query(`DELETE FROM proxies WHERE id IN (${placeholders})`).run(...ids);
     return ids.length;

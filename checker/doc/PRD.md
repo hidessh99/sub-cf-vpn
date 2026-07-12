@@ -43,7 +43,7 @@ Saat ini, data konfigurasi frontend (`proxyip.json`, `domain.json`, `bug_list.js
 ```
 checker/
 ├── index.ts                     # Entry point, server bootstrap
-├── package.json                 # Dependencies (tambah jose)
+├── package.json                 # Dependencies (tambah hono/jwt)
 ├── config.json                  # Local configuration with secrets (git ignored)
 ├── config.example.json          # Configuration template
 ├── PRD.md                       # Dokumen ini
@@ -79,7 +79,7 @@ checker/
 │   └── utils/
 │       ├── response.ts          # Standard JSON response builder
 │       ├── password.ts          # Bun.password hash & verify
-│       └── jwt.ts               # JWT sign & verify (jose)
+│       └── jwt.ts               # JWT sign & verify (hono/jwt)
 └── data/
     └── admin.db                 # SQLite database file (gitignored)
 ```
@@ -329,7 +329,7 @@ Semua repository menggunakan `bun:sqlite` prepared statements untuk keamanan & p
 
 ##### [NEW] src/middlewares/authMiddleware.ts
 - Extract `Authorization: Bearer <token>` header
-- Verify JWT via `jose`
+- Verify JWT via `hono/jwt`
 - Return admin info jika valid, atau `null` jika tidak
 - Controller yang protected akan cek result dan return `401` jika `null`
 
@@ -352,7 +352,7 @@ Semua repository menggunakan `bun:sqlite` prepared statements untuk keamanan & p
 - `verifyPassword(plain, hash)` → `Bun.password.verify(plain, hash)`
 
 ##### [NEW] src/utils/jwt.ts
-- `signToken(payload)` → JWT signed with HS256 via `jose`
+- `signToken(payload)` → JWT signed with HS256 via `hono/jwt`
 - `verifyToken(token)` → decoded payload or throw
 - Token expiry: configurable via env `JWT_EXPIRES_IN` (default `24h`)
 
@@ -388,7 +388,7 @@ Semua repository menggunakan `bun:sqlite` prepared statements untuk keamanan & p
 ```json
 {
   "dependencies": {
-    "jose": "^6.0.0"
+    "hono": "^4.12.29"
   },
   "scripts": {
     "start": "bun run index.ts",
@@ -582,7 +582,7 @@ Urutan implementasi yang optimal:
 7. Controllers (semua)
 8. Routes (`index.ts`)
 9. Update entry point (`checker/index.ts`)
-10. Update `package.json` & install `jose`
+10. Update `package.json` & dependencies
 
 ### Phase 2: Frontend Admin Dashboard
 1. `adminApi.ts` (API helper)

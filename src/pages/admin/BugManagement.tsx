@@ -14,6 +14,7 @@ interface Bug {
 export const BugManagement: React.FC = () => {
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [newBug, setNewBug] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const { showToast } = useToast();
@@ -22,6 +23,10 @@ export const BugManagement: React.FC = () => {
   const [bugToDelete, setBugToDelete] = useState<number | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importJson, setImportJson] = useState('');
+
+  const filteredBugs = bugs.filter((b) =>
+    b.hostname.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const fetchBugs = async () => {
     setLoading(true);
@@ -151,6 +156,29 @@ export const BugManagement: React.FC = () => {
 
         {/* Bug List Table */}
         <div className="rounded-3xl gento-card backdrop-blur-xl border border-white/5 shadow-2xl overflow-hidden">
+          {/* Search Toolbar */}
+          {!loading && bugs.length > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b border-white/5 bg-slate-950/40">
+              <div className="relative flex-grow max-w-md">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search by hostname..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl gento-input text-xs"
+                />
+              </div>
+              <div className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">
+                Showing {filteredBugs.length} of {bugs.length} hosts
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <svg className="animate-spin h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24">
@@ -165,6 +193,13 @@ export const BugManagement: React.FC = () => {
               </svg>
               <span className="text-xs font-semibold">No bug hostnames registered</span>
             </div>
+          ) : filteredBugs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-slate-600">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+              </svg>
+              <span className="text-xs font-semibold">No matching bug hostnames found</span>
+            </div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
@@ -175,7 +210,7 @@ export const BugManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-slate-300 text-xs">
-                {bugs.map((b) => (
+                {filteredBugs.map((b) => (
                   <tr key={b.id} className="hover:bg-white/[0.01]">
                     <td className="px-6 py-4 font-mono font-medium text-white">{b.hostname}</td>
                     <td className="px-6 py-4 text-slate-400">{b.created_at}</td>

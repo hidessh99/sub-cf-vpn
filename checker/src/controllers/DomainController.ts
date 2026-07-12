@@ -1,10 +1,10 @@
 import { Context } from "hono";
-import { DomainUseCase } from "../usecases/DomainUseCase";
+import { IDomainUseCase } from "../usecases/interfaces";
 import { CreateDomainRequest } from "../dto/domain.dto";
 import { logger } from "../utils/logger";
 
 export class DomainController {
-  constructor(private domainUseCase: DomainUseCase) {}
+  constructor(private domainUseCase: IDomainUseCase) {}
 
   async getDomains(c: Context): Promise<Response> {
     const list = this.domainUseCase.getAllDomains();
@@ -16,7 +16,7 @@ export class DomainController {
   }
 
   async createDomain(c: Context): Promise<Response> {
-    const { domain } = (c.req.valid as any)("json") as CreateDomainRequest;
+    const { domain } = c.req.valid("json" as never) as CreateDomainRequest;
     const result = this.domainUseCase.createDomain(domain);
     return c.json({
       success: true,
@@ -45,7 +45,7 @@ export class DomainController {
   }
 
   async importDomains(c: Context): Promise<Response> {
-    const data = (c.req.valid as any)("json") as string[];
+    const data = c.req.valid("json" as never) as string[];
     const count = this.domainUseCase.importFromJSON(data);
     return c.json({
       success: true,

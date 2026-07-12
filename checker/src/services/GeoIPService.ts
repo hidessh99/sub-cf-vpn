@@ -1,0 +1,77 @@
+import { isPrivateIP, extractIP } from "../utils/ipValidator";
+import { ValidationError } from "../utils/errors";
+import { logger } from "../utils/logger";
+
+export interface GeoIPResult {
+  success: boolean;
+  asn: number | null;
+  as_organization: string | null;
+  country: string | null;
+  city: string | null;
+  region: string | null;
+  postal_code: string | null;
+  latitude: string | null;
+  longitude: string | null;
+}
+
+export interface IGeoIPService {
+  lookup(ip: string): Promise<GeoIPResult>;
+}
+
+export class GeoIPService implements IGeoIPService {
+  async lookup(ip: string): Promise<GeoIPResult> {
+    const cleanIp = extractIP(ip);
+
+    if (isPrivateIP(cleanIp)) {
+      logger.warn(`GeoIPService blocked lookup for private IP: ${cleanIp}`, "GeoIPService");
+      throw new ValidationError("Cannot lookup GeoIP for private IP addresses");
+    }
+
+    try {
+      // Fetch from ipwho.is (Primary)
+      const res = await fetch(`https://ipwho.is/${cleanIp}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch geo data from primary provider");
+      }
+      const data = (await res.json()) as any;
+      if (!data || data.success === false) {
+        throw new Error(data?.message || "Invalid IP or lookup failed on primary provider");
+      }
+      return {
+        success: true,
+        asn: data.connection?.asn ? Number(data.connection.asn) : null,
+        as_organization: String(data.connection?.org || data.connection?.isp || ""),
+        country: String(data.country_code || "UNK"),
+        city: String(data.city || ""),
+        region: String(data.region || ""),
+        postal_code: String(data.postal || ""),
+        latitude: String(data.latitude || ""),
+        longitude: String(data.longitude || ""),
+      };
+    } catch (e: any) {
+      logger.warn(`GeoIP primary provider failed for ${cleanIp}: ${e.message}, trying fallback...`, "GeoIPService");
+      // Fallback: try freeipapi.com
+      try {
+        const backupRes = await fetch(`https://freeipapi.com/api/json/${cleanIp}`);
+        if (!backupRes.ok) {
+          throw new Error("Failed to fetch geo data from backup provider");
+        }
+        const backupData = (await backupRes.json()) as any;
+        return {
+          success: true,
+          asn: backupData.asn ? Number(backupData.asn) : null,
+          as_organization: String(backupData.asName || ""),
+          country: String(backupData.countryCode || "UNK"),
+          city: String(backupData.cityName || ""),
+          region: String(backupData.regionName || ""),
+          postal_code: String(backupData.zipCode || ""),
+          latitude: String(backupData.latitude || ""),
+          longitude: String(backupData.longitude || ""),
+        };
+      } catch (backupErr: any) {
+        logger.error(`GeoIP lookup failed for ${cleanIp} (both providers)`, backupErr, "GeoIPService");
+        throw new ValidationError(e.message || "GeoIP lookup failed");
+      }
+    }
+  }
+}
