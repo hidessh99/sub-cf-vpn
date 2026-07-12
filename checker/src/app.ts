@@ -7,6 +7,7 @@ import { HTTPException } from "hono/http-exception";
 import { AppError } from "./utils/errors";
 import { logger } from "./utils/logger";
 import { HonoEnv } from "./middlewares/authMiddleware";
+import { ZodError } from "zod";
 
 // Import Hono routers
 import { auth } from "./routes/auth.routes";
@@ -53,6 +54,22 @@ app.route("/api", checkerRoutes);
 
 // Global Error Handler
 app.onError((err, c) => {
+  if (err instanceof ZodError) {
+    const errors = err.errors.map((e) => {
+      const field = e.path.length > 0 ? e.path.join(".") : "input";
+      return `${field}: ${e.message}`;
+    });
+    return c.json(
+      {
+        success: false,
+        message: "Validation failed",
+        errors,
+        error: null,
+      },
+      400
+    );
+  }
+
   if (err instanceof AppError) {
     return c.json(
       {

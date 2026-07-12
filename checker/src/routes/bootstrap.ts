@@ -45,24 +45,48 @@ export const systemController = new SystemController();
 export const validateJson = (schema: z.ZodSchema) => 
   zValidator("json", schema, (result, c) => {
     if (!result.success) {
-      const msg = (result as any).error.errors.map((e: any) => e.message).join(", ");
-      return c.json({ success: false, message: msg, error: null }, 400);
+      const errors = (result as any).error.errors.map((e: any) => {
+        const field = e.path.length > 0 ? e.path.join(".") : "input";
+        return `${field}: ${e.message}`;
+      });
+      return c.json({
+        success: false,
+        message: "Validation failed",
+        errors,
+        error: null
+      }, 400);
     }
   });
 
 export const validateProxyJson = (schema: z.ZodSchema) => 
   zValidator("json", schema, (result, c) => {
     if (!result.success) {
-      const msg = (result as any).error.errors.map((e: any) => `${e.path.join(".")}: ${e.message}`).join(", ");
-      return c.json({ success: false, message: msg, error: null }, 400);
+      const errors = (result as any).error.errors.map((e: any) => {
+        const field = e.path.length > 0 ? e.path.join(".") : "input";
+        return `${field}: ${e.message}`;
+      });
+      return c.json({
+        success: false,
+        message: "Validation failed",
+        errors,
+        error: null
+      }, 400);
     }
   });
 
 export const validateProxyImportJson = (schema: z.ZodSchema) => 
   zValidator("json", schema, (result, c) => {
     if (!result.success) {
-      const msg = (result as any).error.errors.map((e: any) => `[Item ${e.path.join(".")}]: ${e.message}`).join(", ");
-      return c.json({ success: false, message: `Invalid import format: ${msg}`, error: null }, 400);
+      const errors = (result as any).error.errors.map((e: any) => {
+        const field = e.path.length > 0 ? `Item ${e.path.join(".")}` : "input";
+        return `${field}: ${e.message}`;
+      });
+      return c.json({
+        success: false,
+        message: "Invalid import format",
+        errors,
+        error: null
+      }, 400);
     }
   });
 
@@ -72,6 +96,7 @@ export const validateArrayOfStringsJson = () =>
       return c.json({
         success: false,
         message: "Import data must be a JSON array of non-empty strings",
+        errors: ["input: Import data must be a JSON array of non-empty strings"],
         error: null
       }, 400);
     }

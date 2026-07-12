@@ -22,16 +22,24 @@ const server = Bun.serve({
 
 logger.info(`Service running on http://0.0.0.0:${server.port}`, "System");
 
+let isShuttingDown = false;
+
 // Graceful Shutdown implementation
 const shutdown = async () => {
-  logger.info("Shutdown signal received. Starting graceful shutdown...", "System");
+  if (isShuttingDown) {
+    logger.info("Force exit requested. Terminating process immediately.", "System");
+    process.exit(1);
+  }
+
+  isShuttingDown = true;
+  logger.info("Shutdown signal received. Starting graceful shutdown... (Press Ctrl+C again to force exit)", "System");
   
   // 1. Stop Bun server from accepting new connections
   server.stop(false);
   logger.info("HTTP server stopped accepting new connections. Allowing active requests to drain...", "System");
 
-  // 2. Wait for 2 seconds to allow in-flight requests to complete
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  // 2. Wait for 500ms to allow in-flight requests to complete
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   // 3. Close SQLite connection
   try {

@@ -39,7 +39,9 @@ describe("Hono App Routing Integration", () => {
     expect(res.status).toBe(400);
     const body = await res.json() as any;
     expect(body.success).toBe(false);
-    expect(body.message).toContain("Required");
+    expect(body.message).toContain("Validation failed");
+    expect(body.errors).toContain("username: Username is required");
+    expect(body.errors).toContain("password: Password is required");
   });
 
   test("GET /api/v1/auth/me without authorization should return 401", async () => {
@@ -92,7 +94,8 @@ describe("Hono App Routing Integration", () => {
       expect(res.status).toBe(400);
       const body = await res.json() as any;
       expect(body.success).toBe(false);
-      expect(body.message).toContain("Expected object, received array");
+      expect(body.message).toContain("Invalid import format");
+      expect(body.errors).toContain("input: Expected object, received array");
     });
   });
 });
