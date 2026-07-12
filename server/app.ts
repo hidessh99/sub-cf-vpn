@@ -1,0 +1,130 @@
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { timeout } from "hono/timeout";
+import { HTTPException } from "hono/http-exception";
+import { ZodError } from "zod";
+import { AppError } from "./utils/errors";
+import { logger } from "./utils/logger";
+import { HonoEnv } from "./bindings";
+import { createServices } from "./routes/bootstrap";
+import { ensureAdminSeeded } from "./utils/seed";
+
+// Import Hono routers
+import { auth } from "./routes/auth.routes";
+import { proxyAdminRoutes } from "./routes/proxy.routes";
+import { publicRoutes } from "./routes/public.routes";
+import { domainRoutes } from "./routes/domain.routes";
+import { bugRoutes } from "./routes/bug.routes";
+import { dashboardRoutes } from "./routes/dashboard.routes";
+import { systemRoutes } from "./routes/system.routes";
+
+export function createApp() {
+  const app = new Hono<HonoEnv>();
+
+  // Global timeout (30 seconds)
+  const customTimeoutException = new HTTPException(408, {
+    message: "Request timeout. Please try again later.",
+  });
+  app.use("*", timeout(30000, customTimeoutException));
+
+  // CORS Middleware
+  app.use(
+    "*",
+    cors({
+      origin: "*",
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
+      maxAge: 86400,
+    })
+  );
+
+  // Dependency Injection and Auto-Seeding Middleware
+  app.use("*", async (c, next) => {
+    // Run seeder in background non-blockingly
+    c.executionCtx.waitUntil(
+      ensureAdminSeeded(
+        c.env.DB,
+        c.env.ADMIN_USERNAME || "admin",
+        c.env.ADMIN_PASSWORD || "hidessh12345"
+      )
+    );
+
+    const services = createServices(c.env.DB, c.env.JWT_SECRET || "temp-secret");
+    c.set("services", services);
+    await next();
+  });
+
+  // Mount routes
+  app.route("/", systemRoutes);
+  app.route("/api/v1/auth", auth);
+  app.route("/api/v1/proxies", proxyAdminRoutes);
+  app.route("/api/v1/public", publicRoutes);
+  app.route("/api/v1/domains", domainRoutes);
+  app.route("/api/v1/bugs", bugRoutes);
+  app.route("/api/v1/dashboard", dashboardRoutes);
+
+  // Global Error Handler
+  app.onError((err, c) => {
+    if (err instanceof ZodError) {
+      const errors = err.errors.map((e) => {
+        const field = e.path.length > 0 ? e.path.join(".") : "input";
+        return `${field}: ${e.message}`;
+      });
+      return c.json(
+        {
+          success: false,
+          message: "Validation failed",
+          errors,
+          error: null,
+        },
+        400
+      );
+    }
+
+    if (err instanceof AppError) {
+      return c.json(
+        {
+          success: false,
+          message: err.message,
+          error: null,
+        },
+        err.statusCode as any
+      );
+    }
+
+    if (err instanceof HTTPException) {
+      return c.json(
+        {
+          success: false,
+          message: err.message,
+          error: null,
+        },
+        err.status as any
+      );
+    }
+
+    logger.error("Unexpected error occurred during routing", err, "Router");
+    return c.json(
+      {
+        success: false,
+        message: err.message || "Internal Server Error",
+        error: null,
+      },
+      500
+    );
+  });
+
+  // Custom 404 Handler
+  app.notFound((c) => {
+    return c.json(
+      {
+        success: false,
+        message: `Route not found: ${c.req.method} ${c.req.path}`,
+        error: null,
+      },
+      404
+    );
+  });
+
+  return app;
+}

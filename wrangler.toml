@@ -1,5 +1,17 @@
 name = "lufeng"
 compatibility_date = "2025-11-22"
+compatibility_flags = [ "nodejs_compat" ]
 
 [assets]
 directory = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "checker-db"
+database_id = "temp-id-placeholder"
+
+[vars]
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "hidessh12345"
+CRON_BATCH_SIZE = "10"
+CRON_TIMEOUT_MS = "2500"
