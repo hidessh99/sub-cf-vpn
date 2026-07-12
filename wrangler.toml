@@ -8,7 +8,7 @@ directory = "./dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "checker-db"
-database_id = "temp-id-placeholder"
+database_id = "87340b92-d86f-4d88-af46-7c4e4a761dc6"
 
 [vars]
 ADMIN_USERNAME = "admin"
