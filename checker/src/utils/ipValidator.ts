@@ -1,6 +1,35 @@
 import * as net from "node:net";
 
 /**
+ * Extracts the raw IP address string from potential IP:port, [IPv6]:port, or pure IP format.
+ */
+export function extractIP(input: string): string {
+  const clean = input.trim();
+  
+  // Handle brackets [IPv6] (e.g. [::1]:8443)
+  if (clean.startsWith("[") && clean.includes("]")) {
+    const end = clean.indexOf("]");
+    return clean.substring(1, end);
+  }
+  
+  // If it's directly a valid IP
+  if (net.isIP(clean) !== 0) {
+    return clean;
+  }
+  
+  // If it contains colons (could be IPv4 with port or IPv6 with port without brackets)
+  if (clean.includes(":")) {
+    const lastColon = clean.lastIndexOf(":");
+    const ipPart = clean.substring(0, lastColon);
+    if (net.isIP(ipPart) !== 0) {
+      return ipPart;
+    }
+  }
+  
+  return clean;
+}
+
+/**
  * Parses an IPv4 address string into a 32-bit unsigned integer.
  * Returns null if the address is not a valid IPv4 address.
  */
@@ -14,9 +43,11 @@ function parseIPv4(ip: string): number | null {
 /**
  * Checks if a given IP address is private, loopback, or link-local.
  * Supports both IPv4 and IPv6, including IPv4-mapped IPv6 addresses.
+ * Automatically extracts IP if a port is attached.
  */
 export function isPrivateIP(ip: string): boolean {
-  const cleanIp = ip.trim().toLowerCase();
+  const extracted = extractIP(ip);
+  const cleanIp = extracted.toLowerCase();
   
   if (!cleanIp) return true;
 
@@ -86,9 +117,10 @@ export function isPrivateIP(ip: string): boolean {
 
 /**
  * Validates that the input is a valid public IP address (IPv4 or IPv6).
+ * Automatically extracts IP if a port is attached.
  */
 export function isValidPublicIP(ip: string): boolean {
-  const cleanIp = ip.trim();
-  if (net.isIP(cleanIp) === 0) return false;
-  return !isPrivateIP(cleanIp);
+  const extracted = extractIP(ip);
+  if (net.isIP(extracted) === 0) return false;
+  return !isPrivateIP(extracted);
 }
