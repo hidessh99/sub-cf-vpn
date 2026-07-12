@@ -1,0 +1,17 @@
+{
+  "name": "lufeng-vpn-checker",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun run --watch index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.8.0",
+    "hono": "^4.12.29",
+    "zod": "^3.23.8"
+  }
+}
