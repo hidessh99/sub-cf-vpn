@@ -25,10 +25,11 @@ type CronCheckConfig struct {
 }
 
 type AppConfig struct {
-	Port      int             `mapstructure:"port"`
-	JWT       JWTConfig       `mapstructure:"jwt"`
-	Admin     AdminConfig     `mapstructure:"admin"`
-	CronCheck CronCheckConfig `mapstructure:"cronCheck"`
+	Port           int             `mapstructure:"port"`
+	AllowedOrigins []string        `mapstructure:"allowedOrigins"`
+	JWT            JWTConfig       `mapstructure:"jwt"`
+	Admin          AdminConfig     `mapstructure:"admin"`
+	CronCheck      CronCheckConfig `mapstructure:"cronCheck"`
 }
 
 func LoadConfig(path string) (*AppConfig, error) {
@@ -41,6 +42,7 @@ func LoadConfig(path string) (*AppConfig, error) {
 
 	// Default settings
 	viper.SetDefault("port", 4002)
+	viper.SetDefault("allowedOrigins", []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"})
 	viper.SetDefault("jwt.expiresIn", "24h")
 	viper.SetDefault("admin.username", "admin")
 	viper.SetDefault("admin.password", "admin123")

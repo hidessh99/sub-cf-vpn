@@ -1,5 +1,11 @@
 {
   "port": 4002,
+  "allowedOrigins": [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173"
+  ],
   "jwt": {
     "secret": "UrsiK5IYUQ9tLY8Ob3Betn7UNuqjMZQBZ0dQhOLovL5",
     "expiresIn": "24h"

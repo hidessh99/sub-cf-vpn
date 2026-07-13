@@ -1,5 +1,11 @@
 {
   "port": 4002,
+  "allowedOrigins": [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173"
+  ],
   "jwt": {
     "secret": "generate-a-secure-random-secret-key-32-chars-minimum",
     "expiresIn": "24h"

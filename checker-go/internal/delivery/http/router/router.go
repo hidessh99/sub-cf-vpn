@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hidessh99/sub-cf-vpn/checker-go/internal/delivery/http/dto"
@@ -71,6 +72,7 @@ func SetupRouter(e *echo.Echo, c *container.Container) {
 
 	// 1. Global Middlewares
 	e.Use(middleware.RequestID())
+	e.Use(middleware.ContextTimeout(30 * time.Second))
 	e.Use(middleware.Gzip())
 	e.Use(custommiddleware.RequestLogger(c.Logger))
 	e.Use(custommiddleware.SecurityHeaders())
@@ -78,7 +80,10 @@ func SetupRouter(e *echo.Echo, c *container.Container) {
 
 	// Configure Admin CORS allowed origins
 	adminOriginsStr := os.Getenv("ADMIN_ALLOWED_ORIGINS")
-	adminOrigins := []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"}
+	adminOrigins := c.Config.AllowedOrigins
+	if len(adminOrigins) == 0 {
+		adminOrigins = []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"}
+	}
 	if adminOriginsStr != "" {
 		adminOrigins = nil
 		for _, o := range strings.Split(adminOriginsStr, ",") {
