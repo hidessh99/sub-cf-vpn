@@ -1,0 +1,30 @@
+# Compiled binaries
+/server
+/server.exe
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# SQLite Database storage
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Configurations containing local secrets
+/config.json
+
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvsca
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db

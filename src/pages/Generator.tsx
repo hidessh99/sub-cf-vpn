@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Wifi, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { ProxyItem } from '../types';
 import { CONFIG } from '../utils/config';
-import { generateUUID } from '../utils/common';
 import {
   generateSingleVlessLink,
   generateSingleTrojanLink,
@@ -11,6 +10,7 @@ import {
 import { useToast } from '../components/Toast';
 import { useProxies } from '../hooks/useProxies';
 import { useProxyStatusChecker, getProxyKey } from '../hooks/useProxyStatusChecker';
+import { useGeneratorForm } from '../hooks/useGeneratorForm';
 import { ProxyList } from '../components/generator/ProxyList';
 import { ConfigForm } from '../components/generator/ConfigForm';
 import { ConfigResult } from '../components/generator/ConfigResult';
@@ -31,15 +31,26 @@ const Generator: React.FC = () => {
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
   const [activeTab, setActiveTab] = useState<'vless' | 'trojan' | 'ss'>('vless');
 
-  // Form states
-  const [formUUID, setFormUUID] = useState('');
-  const [formPassword, setFormPassword] = useState('');
-  const [formSecurity, setFormSecurity] = useState<'tls' | 'none'>('tls');
-  const [formDomain, setFormDomain] = useState('');
-  const [formBug, setFormBug] = useState('');
-  const [formManualBug, setFormManualBug] = useState('');
-  const [formWildcard, setFormWildcard] = useState(false);
-  const [manualAlias, setManualAlias] = useState<string | null>(null);
+  // Form states managed via custom hook
+  const {
+    formUUID,
+    setFormUUID,
+    formPassword,
+    setFormPassword,
+    formSecurity,
+    setFormSecurity,
+    formDomain,
+    setFormDomain,
+    formBug,
+    setFormBug,
+    formManualBug,
+    setFormManualBug,
+    formWildcard,
+    setFormWildcard,
+    manualAlias,
+    setManualAlias,
+    resetFormValues,
+  } = useGeneratorForm(domains);
 
   // Results
   const [showResult, setShowResult] = useState(false);
@@ -48,26 +59,10 @@ const Generator: React.FC = () => {
 
   const { showToast } = useToast();
 
-  // Reset/Initialize forms on mount
-  useEffect(() => {
-    setFormUUID(generateUUID());
-    setFormPassword(generateUUID());
-  }, []);
-
-  // Set default domain when domains list is loaded
-  useEffect(() => {
-    if (domains.length > 0 && !formDomain) {
-      const randomBuffer = new Uint32Array(1);
-      window.crypto.getRandomValues(randomBuffer);
-      const randomIndex = randomBuffer[0] % domains.length;
-      setFormDomain(domains[randomIndex]);
-    }
-  }, [domains, formDomain]);
-
   // Reset custom alias on proxy selection change
   useEffect(() => {
     setManualAlias(null);
-  }, [selectedProxy]);
+  }, [selectedProxy, setManualAlias]);
 
   // Handle Custom URL load
   const handleReload = (url: string) => {
@@ -160,8 +155,7 @@ const Generator: React.FC = () => {
   };
 
   const handleCreateNew = () => {
-    setFormUUID(generateUUID());
-    setFormPassword(generateUUID());
+    resetFormValues();
     setShowResult(false);
   };
 
@@ -210,9 +204,9 @@ const Generator: React.FC = () => {
             <div className="absolute -right-6 -top-6 w-32 h-32 bg-purple-600/20 rounded-full blur-3xl"></div>
             <div className="flex justify-between items-start relative z-10">
               <div>
-                <h3 className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">
+                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1 block">
                   Selected Server
-                </h3>
+                </span>
                 <div className="flex items-center gap-2">
                   <h2 className="font-display text-lg font-bold text-white truncate max-w-[200px]">
                     {selectedProxy ? selectedProxy.provider : 'Select Proxy'}

@@ -1,5 +1,6 @@
 import { IProxyRepository, IDomainRepository, IBugRepository } from "../repositories/interfaces";
 import { logger } from "../utils/logger";
+import { IDashboardUseCase } from "./interfaces";
 
 export interface DashboardStats {
   proxies: number;
@@ -7,7 +8,7 @@ export interface DashboardStats {
   bugs: number;
 }
 
-export class DashboardUseCase {
+export class DashboardUseCase implements IDashboardUseCase {
   constructor(
     private proxyRepo: IProxyRepository,
     private domainRepo: IDomainRepository,

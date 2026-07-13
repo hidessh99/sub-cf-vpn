@@ -3,12 +3,17 @@ import { app } from './src/app';
 import { config } from "./src/utils/config";
 import { logger } from './src/utils/logger';
 import { db } from './database/database';
+import { startProxyHealthCron } from './src/cron/proxyHealthCheck';
+import { proxyRepo } from './src/container';
 
 // Run database init and seed on startup
 try {
   logger.info("Running database migrations and seeding...", "System");
   await seed();
   logger.info("Seeding complete.", "System");
+  
+  // Start the proxy health checker cron job
+  startProxyHealthCron(proxyRepo);
 } catch (e) {
   logger.error("Failed to seed database", e, "System");
 }

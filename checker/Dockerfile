@@ -1,15 +1,21 @@
-FROM oven/bun:1-alpine AS runner
-
+# Stage 1: Build & install dependencies
+FROM oven/bun:1-alpine AS builder
 WORKDIR /app
-
-# Copy package manifest and lockfiles
-COPY package.json bun.lock* ./
-
-# Install dependencies
+COPY package.json bun.lockb* ./
 RUN bun install --production
 
-# Copy source code and directories
-COPY . .
+# Stage 2: Production runner
+FROM oven/bun:1-alpine AS runner
+WORKDIR /app
+
+# Copy production packages and node_modules from builder
+COPY package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy only required source code
+COPY src/ ./src
+COPY database/ ./database
+COPY index.ts ./
 
 # Expose checker port
 EXPOSE 4002

@@ -76,12 +76,7 @@ export const ConfigResult: React.FC<ConfigResultProps> = ({
             ref={qrRef}
             className="bg-white p-4 rounded-2xl flex justify-center w-max shadow-xl min-w-[160px] min-h-[160px]"
           >
-            <QRCodeCanvas
-              value={resultUrl}
-              size={160}
-              level="M"
-              includeMargin={false}
-            />
+            <QRCodeCanvas value={resultUrl} size={160} level="M" includeMargin={false} />
           </div>
           <button
             onClick={handleDownloadQr}

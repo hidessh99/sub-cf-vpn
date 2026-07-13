@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
-import { Search, Loader2, Plus, Download, RefreshCw, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import {
+  Search,
+  Loader2,
+  Plus,
+  Download,
+  RefreshCw,
+  Trash2,
+  CheckCircle2,
+  AlertTriangle,
+} from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
 import { useAdminProxies } from '../../hooks/useAdminProxies';
-import { ProxyIP } from '../../types/admin';
+import { ProxyIP } from '../../types';
 import { ProxyFormModal } from '../../components/admin/ProxyFormModal';
 import { ProxyImportModal } from '../../components/admin/ProxyImportModal';
+import { getErrorMessage } from '../../utils/common';
 
 export const ProxyManagement: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -26,6 +36,7 @@ export const ProxyManagement: React.FC = () => {
     deleteProxy,
     importProxies,
     syncHealth,
+    deleteAllProxies,
     fetchGeoIP,
   } = useAdminProxies(page, limit, search);
 
@@ -34,15 +45,29 @@ export const ProxyManagement: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingProxy, setEditingProxy] = useState<ProxyIP | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showConfirmDeleteAll, setShowConfirmDeleteAll] = useState(false);
   const [proxyToDelete, setProxyToDelete] = useState<number | null>(null);
+
+  // Delete All Confirm Trigger
+  const handleDeleteAllConfirm = async () => {
+    try {
+      const res = await deleteAllProxies.mutateAsync();
+      showToast(res.message || 'All proxies deleted successfully', 'success');
+      setPage(1);
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setShowConfirmDeleteAll(false);
+    }
+  };
 
   // Clean Dead Proxies Trigger
   const handleSyncHealth = async () => {
     try {
       const res = await syncHealth.mutateAsync();
       showToast(res.message || 'Proxy health check started in the background', 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Failed to trigger proxy health check', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     }
   };
 
@@ -70,8 +95,8 @@ export const ProxyManagement: React.FC = () => {
       if (proxies.length === 1 && page > 1) {
         setPage((p) => p - 1);
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to delete proxy', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setShowConfirm(false);
       setProxyToDelete(null);
@@ -104,6 +129,14 @@ export const ProxyManagement: React.FC = () => {
             <p className="text-slate-400 text-sm mt-1">Total {total} configurations registered</p>
           </div>
           <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+            <button
+              onClick={() => setShowConfirmDeleteAll(true)}
+              disabled={deleteAllProxies.isPending || proxies.length === 0}
+              className="flex-grow sm:flex-initial px-4 py-2.5 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none text-xs font-semibold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1.5"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete All
+            </button>
             <button
               onClick={handleSyncHealth}
               disabled={syncHealth.isPending}
@@ -166,7 +199,9 @@ export const ProxyManagement: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-32 text-slate-500 gap-2">
                 <AlertTriangle className="w-12 h-12 text-slate-600" />
                 <span className="text-sm font-semibold">No proxies found</span>
-                <span className="text-xs">Add a new proxy configuration or import a JSON list.</span>
+                <span className="text-xs">
+                  Add a new proxy configuration or import a JSON list.
+                </span>
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
@@ -192,7 +227,9 @@ export const ProxyManagement: React.FC = () => {
                           {p.country || 'N/A'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 truncate max-w-[200px]">{p.as_organization || 'N/A'}</td>
+                      <td className="px-6 py-4 truncate max-w-[200px]">
+                        {p.as_organization || 'N/A'}
+                      </td>
                       <td className="px-6 py-4 font-mono text-purple-400">{p.colo || 'N/A'}</td>
                       <td className="px-6 py-4 font-mono">{p.latency}ms</td>
                       <td className="px-6 py-4">
@@ -288,6 +325,17 @@ export const ProxyManagement: React.FC = () => {
             setShowConfirm(false);
             setProxyToDelete(null);
           }}
+        />
+
+        {/* Delete All Confirmation */}
+        <ConfirmDialog
+          isOpen={showConfirmDeleteAll}
+          title="Delete All Proxies?"
+          message="Are you sure you want to delete ALL proxy configurations? This action will completely clear the proxy list and cannot be undone."
+          confirmLabel="Delete All"
+          cancelLabel="Cancel"
+          onConfirm={handleDeleteAllConfirm}
+          onCancel={() => setShowConfirmDeleteAll(false)}
         />
       </div>
     </AdminLayout>

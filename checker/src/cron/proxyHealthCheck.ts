@@ -1,12 +1,10 @@
 import { config } from '../utils/config';
-import { ProxyRepository } from '../repositories/ProxyRepository';
+import { IProxyRepository } from '../repositories/interfaces';
 import { checkProxy } from '../utils/checkProxy';
 import { logger } from '../utils/logger';
-import { db } from '../../database/database';
+import { isPrivateIP } from '../utils/ipValidator';
 
-const proxyRepo = new ProxyRepository(db);
-
-export async function runHealthCheck() {
+export async function runHealthCheck(proxyRepo: IProxyRepository) {
   const cronConfig = config.cronCheck || {};
   const batchSize = cronConfig.batchSize || 20;
   const timeoutMs = cronConfig.timeoutMs || 3000;
@@ -30,6 +28,13 @@ export async function runHealthCheck() {
       const promises = batch.map(async (p) => {
         const host = p.proxy || p.ip;
         const port = parseInt(p.port || '443', 10);
+        
+        if (isPrivateIP(host)) {
+          logger.warn(`Cron check blocked private IP range proxy: ${host}:${port}. Marking as dead.`, "CronCheck");
+          deadIds.push(p.id);
+          return;
+        }
+
         try {
           const res = await checkProxy(host, port, timeoutMs);
           if (!res.proxyip) {
@@ -61,7 +66,7 @@ export async function runHealthCheck() {
   }
 }
 
-export function startProxyHealthCron() {
+export function startProxyHealthCron(proxyRepo: IProxyRepository) {
   const cronConfig = config.cronCheck || {};
   const enabled = cronConfig.enabled !== false;
   const intervalHours = cronConfig.intervalHours || 24;
@@ -76,11 +81,11 @@ export function startProxyHealthCron() {
 
   // Run initial check after 5 seconds delay so service starting outputs are complete
   setTimeout(() => {
-    runHealthCheck();
+    runHealthCheck(proxyRepo);
   }, 5000);
 
   // Set recurring interval
   setInterval(() => {
-    runHealthCheck();
+    runHealthCheck(proxyRepo);
   }, intervalMs);
 }

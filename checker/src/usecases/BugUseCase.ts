@@ -2,8 +2,9 @@ import { IBugRepository } from "../repositories/interfaces";
 import { Bug } from "../models/Bug";
 import { ValidationError } from "../utils/errors";
 import { logger } from "../utils/logger";
+import { IBugUseCase } from "./interfaces";
 
-export class BugUseCase {
+export class BugUseCase implements IBugUseCase {
   constructor(private bugRepo: IBugRepository) {}
 
   getAllBugs(): Bug[] {

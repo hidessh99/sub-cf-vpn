@@ -4,8 +4,9 @@ import { signToken } from "../utils/jwt";
 import { Admin } from "../models/Admin";
 import { UnauthorizedError, NotFoundError, ValidationError } from "../utils/errors";
 import { logger } from "../utils/logger";
+import { IAuthUseCase } from "./interfaces";
 
-export class AuthUseCase {
+export class AuthUseCase implements IAuthUseCase {
   constructor(private adminRepo: IAdminRepository) {}
 
   async login(username: string, passwordPlain: string): Promise<{ token: string; admin: Omit<Admin, "password"> }> {

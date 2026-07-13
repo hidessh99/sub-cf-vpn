@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { getErrorMessage } from '../../utils/common';
 
 interface ProxyImportModalProps {
   isOpen: boolean;
@@ -34,12 +35,15 @@ export const ProxyImportModal: React.FC<ProxyImportModalProps> = ({
       if (!Array.isArray(parsed)) {
         throw new Error('JSON must be an array of proxy objects.');
       }
-      
+
       await onImport(importJson);
       showToast('Proxies imported successfully!', 'success');
       onClose();
-    } catch (err: any) {
-      showToast(err.message || 'Failed to import proxies. Make sure it is valid JSON.', 'error');
+    } catch (err) {
+      showToast(
+        getErrorMessage(err) || 'Failed to import proxies. Make sure it is valid JSON.',
+        'error'
+      );
     } finally {
       setIsSubmitting(false);
     }

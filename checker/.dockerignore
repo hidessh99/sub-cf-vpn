@@ -4,3 +4,6 @@ config.json
 *.md
 .git
 .gitignore
+test
+doc
+

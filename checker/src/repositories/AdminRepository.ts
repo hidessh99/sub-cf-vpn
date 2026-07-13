@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { Admin } from "../models/Admin";
-import { AdminRow } from "../entities/AdminEntity";
+import { AdminRow } from "../types/db";
 import { IAdminRepository } from "./interfaces";
 
 export class AdminRepository implements IAdminRepository {

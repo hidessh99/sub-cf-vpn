@@ -37,6 +37,7 @@ services:
       - "4002"
     volumes:
       - ${APP_PATH}/data:/app/data
+      - ${APP_PATH}/config.json:/app/config.json:ro
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}

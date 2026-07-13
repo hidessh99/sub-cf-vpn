@@ -1,14 +1,14 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { AuthService } from '../../services/AuthService';
 
 interface ProtectedRouteProps {
   children: React.ReactElement;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const token = localStorage.getItem('admin_token');
-
-  if (!token) {
+  if (!AuthService.isAuthenticated()) {
+    AuthService.clearSession();
     return <Navigate to="/admin/login" replace />;
   }
 
