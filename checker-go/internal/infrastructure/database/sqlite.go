@@ -3,6 +3,7 @@ package database
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/glebarez/sqlite"
 	"github.com/hidessh99/sub-cf-vpn/checker-go/internal/domain/entity"
@@ -44,6 +45,11 @@ func InitDatabase(dbPath string) (*gorm.DB, error) {
 	if _, err := sqlDB.Exec("PRAGMA busy_timeout = 5000;"); err != nil {
 		return nil, err
 	}
+
+	// GORM SQLite connection pool limits to prevent database lock contention
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// Auto Migration
 	err = db.AutoMigrate(
