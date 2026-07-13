@@ -1,38 +1,36 @@
-name: CI Pipeline
+name: Go CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master, main ]
   pull_request:
-    branches: [ main, master ]
-
-permissions:
-  contents: read
+    branches: [ master, main ]
 
 jobs:
-  build-and-test:
+  lint-and-test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          bun-version: latest
+          go-version: '1.23'
+          cache: true
 
       - name: Install Dependencies
-        run: bun install --frozen-lockfile
+        run: |
+          cd checker-go
+          go mod download
 
-      - name: Code Formatting Check (Prettier)
-        run: bunx prettier --check "src/**/*.{ts,tsx}"
+      - name: Run GolangCI-Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.60
+          working-directory: checker-go
 
-      - name: Code Linting Check (ESLint)
-        run: bunx eslint "src/**/*.{ts,tsx}"
-
-      - name: TypeScript Compile Check
-        run: bunx tsc --noEmit
-
-      - name: Run Unit Tests
-        run: bunx vitest run
+      - name: Run Tests
+        run: |
+          cd checker-go
+          go test -v ./...
