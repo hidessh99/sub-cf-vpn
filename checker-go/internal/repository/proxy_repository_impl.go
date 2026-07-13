@@ -124,3 +124,11 @@ func (r *proxyRepositoryImpl) BulkDelete(ids []uint) (int64, error) {
 	}
 	return result.RowsAffected, nil
 }
+
+func (r *proxyRepositoryImpl) DeleteAll() (int64, error) {
+	result := r.db.Where("1 = 1").Delete(&entity.Proxy{})
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return result.RowsAffected, nil
+}

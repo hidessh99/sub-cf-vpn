@@ -19,4 +19,5 @@ type ProxyRepository interface {
 	Count() (int64, error)
 	FindAllActive() ([]entity.Proxy, error)
 	BulkDelete(ids []uint) (int64, error)
+	DeleteAll() (int64, error)
 }

@@ -29,6 +29,7 @@ type ProxyUseCase interface {
 	LookupGeoIP(ip string) (*geoip.GeoIPResult, error)
 	SyncHealthCheck()
 	RunHealthCheckCycle(ctx context.Context)
+	DeleteAllProxies() (int64, error)
 }
 
 type proxyUseCaseImpl struct {
@@ -211,11 +212,29 @@ func (u *proxyUseCaseImpl) DeleteProxy(id uint) error {
 	return u.proxyRepo.Delete(id)
 }
 
+func (u *proxyUseCaseImpl) DeleteAllProxies() (int64, error) {
+	u.log.Warn("Deleting all proxies from database...", "ProxyUseCase")
+	return u.proxyRepo.DeleteAll()
+}
+
 func (u *proxyUseCaseImpl) ImportFromJSON(list []dto.CreateProxyRequest) (int64, error) {
 	if len(list) == 0 {
 		return 0, nil
 	}
 
+	// Fetch all existing proxies from DB to construct the duplicate-check map
+	existingList, _, err := u.proxyRepo.FindAll(1, 1000000, repository.ProxyFilters{})
+	if err != nil {
+		return 0, err
+	}
+
+	existingMap := make(map[string]bool)
+	for _, p := range existingList {
+		key := strings.TrimSpace(p.IP) + ":" + strings.TrimSpace(p.Port)
+		existingMap[key] = true
+	}
+
+	seenInImport := make(map[string]bool)
 	var proxies []entity.Proxy
 	for _, item := range list {
 		if item.IP == "" {
@@ -231,6 +250,20 @@ func (u *proxyUseCaseImpl) ImportFromJSON(list []dto.CreateProxyRequest) (int64,
 		if item.Port != nil && *item.Port != "" {
 			portVal = *item.Port
 		}
+
+		// Combined key for uniqueness validation (IP + Port)
+		key := strings.TrimSpace(item.IP) + ":" + strings.TrimSpace(portVal)
+
+		// 1. Skip if already exists in database
+		if existingMap[key] {
+			continue
+		}
+
+		// 2. Skip if it is a duplicate inside the imported JSON itself
+		if seenInImport[key] {
+			continue
+		}
+		seenInImport[key] = true
 
 		proxyIPVal := true
 		if item.ProxyIP != nil {
@@ -269,6 +302,10 @@ func (u *proxyUseCaseImpl) ImportFromJSON(list []dto.CreateProxyRequest) (int64,
 			Longitude:      item.Longitude,
 			IsActive:       true,
 		})
+	}
+
+	if len(proxies) == 0 {
+		return 0, nil
 	}
 
 	return u.proxyRepo.BulkCreate(proxies)

@@ -135,6 +135,7 @@ func SetupRouter(e *echo.Echo, c *container.Container) {
 	adminGroup.GET("/proxies", c.ProxyHandler.GetProxies)
 	adminGroup.POST("/proxies", c.ProxyHandler.CreateProxy)
 	adminGroup.PUT("/proxies/:id", c.ProxyHandler.UpdateProxy)
+	adminGroup.DELETE("/proxies", c.ProxyHandler.DeleteAllProxies)
 	adminGroup.DELETE("/proxies/:id", c.ProxyHandler.DeleteProxy)
 	adminGroup.POST("/proxies/import", c.ProxyHandler.ImportProxies)
 	adminGroup.POST("/proxies/sync-health", c.ProxyHandler.SyncHealth)

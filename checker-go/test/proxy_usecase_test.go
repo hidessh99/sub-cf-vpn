@@ -158,6 +158,12 @@ func (m *MockProxyRepository) BulkDelete(ids []uint) (int64, error) {
 	return count, nil
 }
 
+func (m *MockProxyRepository) DeleteAll() (int64, error) {
+	count := int64(len(m.db))
+	m.db = []entity.Proxy{}
+	return count, nil
+}
+
 type MockGeoIPService struct{}
 
 func (m *MockGeoIPService) Lookup(ip string) (*geoip.GeoIPResult, error) {
@@ -413,6 +419,28 @@ func TestProxyImportFromJSON(t *testing.T) {
 	if !errors.As(err, &appErr) || appErr.StatusCode != 400 {
 		t.Errorf("Expected status 400 validation error, got: %v", err)
 	}
+
+	// Test duplicate validation (duplicate in payload, and duplicate against existing database)
+	// Currently, DB contains: 8.8.8.8:443 and 9.9.9.9:80.
+	// We will import: 8.8.8.8:443 (DB duplicate), 10.10.10.10:443 (New), 10.10.10.10:443 (Payload duplicate)
+	importCount2, err := authUC.ImportFromJSON([]dto.CreateProxyRequest{
+		{IP: "8.8.8.8", Port: ptrString("443"), Country: ptrString("US")},
+		{IP: "10.10.10.10", Port: ptrString("443"), Country: ptrString("ID")},
+		{IP: "10.10.10.10", Port: ptrString("443"), Country: ptrString("ID")},
+	})
+	if err != nil {
+		t.Fatalf("ImportFromJSON with duplicates failed: %v", err)
+	}
+
+	// Should only import 10.10.10.10:443 (1 proxy)
+	if importCount2 != 1 {
+		t.Errorf("Expected only 1 proxy imported after deduplication, got %d", importCount2)
+	}
+
+	cnt2, _ := mockRepo.Count()
+	if cnt2 != 3 {
+		t.Errorf("Expected repo total count 3 after deduplication, got %d", cnt2)
+	}
 }
 
 func TestGetPublicProxyListAndGrouped(t *testing.T) {
@@ -461,6 +489,35 @@ func TestGetPublicProxyListAndGrouped(t *testing.T) {
 	}
 	if _, exists := grouped["ID"]; exists {
 		t.Error("Expected inactive country 'ID' group to be empty/non-existent")
+	}
+}
+
+func TestDeleteAllProxies(t *testing.T) {
+	repo := &MockProxyRepository{
+		db: []entity.Proxy{
+			{ID: 1, IP: "1.1.1.1", Proxy: "proxy1", Port: "443", IsActive: true},
+			{ID: 2, IP: "2.2.2.2", Proxy: "proxy2", Port: "443", IsActive: false},
+		},
+	}
+	geo := &MockGeoIPService{}
+	cfg := &config.AppConfig{}
+	logger := testLogger()
+	uc := usecase.NewProxyUseCase(repo, geo, cfg, logger)
+
+	count, err := uc.DeleteAllProxies()
+	if err != nil {
+		t.Fatalf("DeleteAllProxies failed: %v", err)
+	}
+	if count != 2 {
+		t.Errorf("Expected 2 proxies deleted, got %d", count)
+	}
+
+	total, err := repo.Count()
+	if err != nil {
+		t.Fatalf("repo.Count failed: %v", err)
+	}
+	if total != 0 {
+		t.Errorf("Expected repo to be empty, got %d", total)
 	}
 }
 

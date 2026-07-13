@@ -152,6 +152,20 @@ func (h *ProxyHandler) DeleteProxy(c echo.Context) error {
 	})
 }
 
+func (h *ProxyHandler) DeleteAllProxies(c echo.Context) error {
+	count, err := h.proxyUseCase.DeleteAllProxies()
+	if err != nil {
+		h.log.Error("DeleteAllProxies failed in usecase call", err, "ProxyHandler")
+		return err
+	}
+
+	return c.JSON(http.StatusOK, dto.APIResponse{
+		Success: true,
+		Message: fmt.Sprintf("Successfully deleted all %d proxies", count),
+		Data:    map[string]interface{}{"deleted": count},
+	})
+}
+
 func (h *ProxyHandler) ImportProxies(c echo.Context) error {
 	var req dto.ImportProxyListRequest
 	if err := c.Bind(&req); err != nil {
