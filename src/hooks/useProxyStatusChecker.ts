@@ -17,6 +17,7 @@ export const useProxyStatusChecker = () => {
   const checkQueue = useRef<ProxyItem[]>([]);
   const activeChecks = useRef(0);
   const mountedRef = useRef(true);
+  const statusMapRef = useRef<Record<string, ProxyStatus>>({});
 
   useEffect(() => {
     mountedRef.current = true;
@@ -24,6 +25,11 @@ export const useProxyStatusChecker = () => {
       mountedRef.current = false;
     };
   }, []);
+
+  // Sync state to ref to avoid stale closures
+  useEffect(() => {
+    statusMapRef.current = proxyStatusMap;
+  }, [proxyStatusMap]);
 
   const processCheckQueue = useCallback(async () => {
     if (
@@ -110,9 +116,9 @@ export const useProxyStatusChecker = () => {
   }, []);
 
   const queueChecks = useCallback((proxies: ProxyItem[]) => {
-    // Add only unchecked proxies to the queue
+    // Add only unchecked proxies to the queue using the Ref to avoid dependency change loops
     const unchecked = proxies.filter(p => {
-      const status = proxyStatusMap[getProxyKey(p)]?.status;
+      const status = statusMapRef.current[getProxyKey(p)]?.status;
       return !status || status === 'unknown';
     });
 
@@ -122,7 +128,7 @@ export const useProxyStatusChecker = () => {
         processCheckQueue();
       }
     }
-  }, [proxyStatusMap, processCheckQueue]);
+  }, [processCheckQueue]);
 
   const clearStatusMap = useCallback(() => {
     setProxyStatusMap({});

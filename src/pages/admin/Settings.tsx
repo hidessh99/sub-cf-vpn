@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { adminFetch } from '../../utils/adminApi';
+import { apiClient } from '../../utils/apiClient';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
+import { getErrorMessage } from '../../utils/common';
 
 export const Settings: React.FC = () => {
   const [oldPassword, setOldPassword] = useState('');
@@ -27,7 +28,7 @@ export const Settings: React.FC = () => {
 
     setSubmitting(true);
     try {
-      const response = await adminFetch('/api/v1/auth/password', {
+      const response = await apiClient('/api/v1/auth/password', {
         method: 'PUT',
         body: JSON.stringify({ oldPassword, newPassword }),
       });
@@ -38,8 +39,8 @@ export const Settings: React.FC = () => {
         setNewPassword('');
         setConfirmPassword('');
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to change password', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setSubmitting(false);
     }

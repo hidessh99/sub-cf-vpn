@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { adminFetch } from '../../utils/adminApi';
+import { apiClient } from '../../utils/apiClient';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
+import { getErrorMessage } from '../../utils/common';
 
 interface Stats {
   proxies: number;
@@ -17,12 +18,12 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await adminFetch('/api/v1/dashboard/stats');
+        const response = await apiClient('/api/v1/dashboard/stats');
         if (response.success) {
           setStats(response.data);
         }
-      } catch (err: any) {
-        showToast(err.message || 'Failed to fetch dashboard statistics', 'error');
+      } catch (err) {
+        showToast(getErrorMessage(err), 'error');
       } finally {
         setLoading(false);
       }

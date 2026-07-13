@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { adminFetch } from '../../utils/adminApi';
+import { apiClient } from '../../utils/apiClient';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
+import { getErrorMessage } from '../../utils/common';
 
 interface Domain {
   id: number;
@@ -26,12 +27,12 @@ export const DomainManagement: React.FC = () => {
   const fetchDomains = async () => {
     setLoading(true);
     try {
-      const response = await adminFetch('/api/v1/domains');
+      const response = await apiClient('/api/v1/domains');
       if (response.success) {
         setDomains(response.data);
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to fetch domains', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ export const DomainManagement: React.FC = () => {
 
     setSubmitting(true);
     try {
-      const response = await adminFetch('/api/v1/domains', {
+      const response = await apiClient('/api/v1/domains', {
         method: 'POST',
         body: JSON.stringify({ domain: newDomain.trim() }),
       });
@@ -57,8 +58,8 @@ export const DomainManagement: React.FC = () => {
         setNewDomain('');
         fetchDomains();
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to add domain', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -73,7 +74,7 @@ export const DomainManagement: React.FC = () => {
     if (domainToDelete === null) return;
 
     try {
-      const response = await adminFetch(`/api/v1/domains/${domainToDelete}`, {
+      const response = await apiClient(`/api/v1/domains/${domainToDelete}`, {
         method: 'DELETE',
       });
 
@@ -81,8 +82,8 @@ export const DomainManagement: React.FC = () => {
         showToast('Domain deleted successfully', 'success');
         fetchDomains();
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to delete domain', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setShowConfirm(false);
       setDomainToDelete(null);
@@ -93,7 +94,7 @@ export const DomainManagement: React.FC = () => {
     e.preventDefault();
     try {
       const parsed = JSON.parse(importJson);
-      const response = await adminFetch('/api/v1/domains/import', {
+      const response = await apiClient('/api/v1/domains/import', {
         method: 'POST',
         body: JSON.stringify(parsed)
       });
@@ -103,8 +104,8 @@ export const DomainManagement: React.FC = () => {
         setImportJson('');
         fetchDomains();
       }
-    } catch (err: any) {
-      showToast(err.message || 'Invalid JSON format or import failed', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     }
   };
 

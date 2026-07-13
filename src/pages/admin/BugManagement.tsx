@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { adminFetch } from '../../utils/adminApi';
+import { apiClient } from '../../utils/apiClient';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
+import { getErrorMessage } from '../../utils/common';
 
 interface Bug {
   id: number;
@@ -31,12 +32,12 @@ export const BugManagement: React.FC = () => {
   const fetchBugs = async () => {
     setLoading(true);
     try {
-      const response = await adminFetch('/api/v1/bugs');
+      const response = await apiClient('/api/v1/bugs');
       if (response.success) {
         setBugs(response.data);
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to fetch bug list', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setLoading(false);
     }
@@ -52,7 +53,7 @@ export const BugManagement: React.FC = () => {
 
     setSubmitting(true);
     try {
-      const response = await adminFetch('/api/v1/bugs', {
+      const response = await apiClient('/api/v1/bugs', {
         method: 'POST',
         body: JSON.stringify({ hostname: newBug.trim() }),
       });
@@ -62,8 +63,8 @@ export const BugManagement: React.FC = () => {
         setNewBug('');
         fetchBugs();
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to add bug hostname', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -78,7 +79,7 @@ export const BugManagement: React.FC = () => {
     if (bugToDelete === null) return;
 
     try {
-      const response = await adminFetch(`/api/v1/bugs/${bugToDelete}`, {
+      const response = await apiClient(`/api/v1/bugs/${bugToDelete}`, {
         method: 'DELETE',
       });
 
@@ -86,8 +87,8 @@ export const BugManagement: React.FC = () => {
         showToast('Bug hostname deleted successfully', 'success');
         fetchBugs();
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to delete bug hostname', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setShowConfirm(false);
       setBugToDelete(null);
@@ -98,7 +99,7 @@ export const BugManagement: React.FC = () => {
     e.preventDefault();
     try {
       const parsed = JSON.parse(importJson);
-      const response = await adminFetch('/api/v1/bugs/import', {
+      const response = await apiClient('/api/v1/bugs/import', {
         method: 'POST',
         body: JSON.stringify(parsed)
       });
@@ -108,8 +109,8 @@ export const BugManagement: React.FC = () => {
         setImportJson('');
         fetchBugs();
       }
-    } catch (err: any) {
-      showToast(err.message || 'Invalid JSON format or import failed', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     }
   };
 

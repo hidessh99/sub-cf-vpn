@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Globe, Loader2 } from 'lucide-react';
-import { ProxyIP, ApiResponse } from '../../types/admin';
+import { ProxyIP, ApiResponse } from '../../types';
+import { getErrorMessage } from '../../utils/common';
 
 interface ProxyFormModalProps {
   isOpen: boolean;
@@ -174,8 +175,8 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
       } else {
         showToast(response.message || 'GeoIP lookup returned no data', 'error');
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to fetch GeoIP details', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setIsFetchingGeo(false);
     }
@@ -194,12 +195,12 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
         proxy: finalProxy,
         asn: Number(formData.asn) || null,
         latency: Number(formData.latency) || 0,
-      } as any;
+      } as Omit<ProxyIP, 'id'>;
 
       await onSave(payload);
       onClose();
-    } catch (err: any) {
-      showToast(err.message || 'Failed to save configuration', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     }
   };
 

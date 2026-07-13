@@ -4,9 +4,10 @@ import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
 import { useAdminProxies } from '../../hooks/useAdminProxies';
-import { ProxyIP } from '../../types/admin';
+import { ProxyIP } from '../../types';
 import { ProxyFormModal } from '../../components/admin/ProxyFormModal';
 import { ProxyImportModal } from '../../components/admin/ProxyImportModal';
+import { getErrorMessage } from '../../utils/common';
 
 export const ProxyManagement: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -41,8 +42,8 @@ export const ProxyManagement: React.FC = () => {
     try {
       const res = await syncHealth.mutateAsync();
       showToast(res.message || 'Proxy health check started in the background', 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Failed to trigger proxy health check', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     }
   };
 
@@ -70,8 +71,8 @@ export const ProxyManagement: React.FC = () => {
       if (proxies.length === 1 && page > 1) {
         setPage((p) => p - 1);
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to delete proxy', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setShowConfirm(false);
       setProxyToDelete(null);

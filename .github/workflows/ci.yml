@@ -1,0 +1,35 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Code Formatting Check (Prettier)
+        run: bunx prettier --check "src/**/*.{ts,tsx}"
+
+      - name: Code Linting Check (ESLint)
+        run: bunx eslint "src/**/*.{ts,tsx}"
+
+      - name: TypeScript Compile Check
+        run: bunx tsc --noEmit
+
+      - name: Run Unit Tests
+        run: bunx vitest run

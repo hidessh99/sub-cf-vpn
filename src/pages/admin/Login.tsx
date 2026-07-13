@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
-import { ApiResponse, LoginResponseData } from '../../types/admin';
+import { ApiResponse, LoginResponseData } from '../../types';
 import { Eye, EyeOff } from 'lucide-react';
+import { AuthService } from '../../services/AuthService';
+import { getErrorMessage } from '../../utils/common';
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -32,13 +34,12 @@ export const Login: React.FC = () => {
         throw new Error(data.message || 'Login failed');
       }
 
-      localStorage.setItem('admin_token', data.data.token);
-      localStorage.setItem('admin_user', JSON.stringify(data.data.admin));
+      AuthService.setSession(data.data.token, data.data.admin);
       
       showToast('Welcome back, Admin!', 'success');
       navigate('/admin/dashboard');
-    } catch (err: any) {
-      showToast(err.message || 'Invalid username or password', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setLoading(false);
     }

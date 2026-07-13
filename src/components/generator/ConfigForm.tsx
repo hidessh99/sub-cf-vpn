@@ -169,8 +169,9 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
         {/* Security & Domain Selector Row */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Security</label>
+            <label htmlFor="security-select" className="text-[10px] font-bold text-slate-500 uppercase ml-1">Security</label>
             <select
+              id="security-select"
               value={formSecurity}
               onChange={(e) => setFormSecurity(e.target.value as 'tls' | 'none')}
               className="gento-input w-full rounded-xl px-3 py-3 text-xs cursor-pointer focus:outline-none"
@@ -180,8 +181,9 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Domain</label>
+            <label htmlFor="domain-select" className="text-[10px] font-bold text-slate-500 uppercase ml-1">Domain</label>
             <select
+              id="domain-select"
               value={formDomain}
               onChange={(e) => setFormDomain(e.target.value)}
               className="gento-input w-full rounded-xl px-3 py-3 text-xs cursor-pointer focus:outline-none"

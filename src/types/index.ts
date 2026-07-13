@@ -1,4 +1,13 @@
-export interface ApiResponse<T = any> {
+export interface ProxyItem {
+  ip: string;
+  port: string;
+  country: string;
+  provider: string;
+  status?: 'active' | 'dead' | 'loading' | 'unknown';
+  latency?: number;
+}
+
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data: T;

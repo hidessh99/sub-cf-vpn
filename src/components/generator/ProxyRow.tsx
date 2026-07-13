@@ -32,20 +32,20 @@ export const ProxyRow: React.FC<ProxyRowProps> = React.memo(({
           className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center text-[9px] font-bold border flex-shrink-0 transition-colors ${
             isSelected
               ? 'bg-purple-600 text-white border-purple-400'
-              : 'bg-black/30 text-slate-400 border-white/5'
+              : 'bg-black/30 text-slate-300 border-white/10'
           }`}
         >
           <span>{proxy.country}</span>
         </div>
         <div className="min-w-0 flex-grow">
-          <h4
-            className={`text-xs font-bold truncate transition ${
+          <span
+            className={`text-xs font-bold block truncate transition ${
               isSelected ? 'text-purple-300' : 'text-slate-200 group-hover:text-purple-300'
             }`}
           >
             {proxy.provider}
-          </h4>
-          <p className="text-[10px] text-slate-500 font-mono truncate opacity-70">
+          </span>
+          <p className="text-[10px] text-slate-400 font-mono truncate">
             {proxy.ip}:{proxy.port}
           </p>
         </div>

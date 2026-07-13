@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# Disallow search engine indexing on admin routes
+Disallow: /admin/
+Disallow: /#/admin/

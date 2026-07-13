@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { AuthService } from '../../services/AuthService';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -7,11 +8,10 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
-  const adminUser = JSON.parse(localStorage.getItem('admin_user') || '{"username":"Admin"}');
+  const adminUser = AuthService.getUser() || { username: 'Admin' };
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
+    AuthService.clearSession();
     navigate('/admin/login');
   };
 

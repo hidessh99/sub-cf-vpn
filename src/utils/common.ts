@@ -39,7 +39,15 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
     const success = document.execCommand('copy');
     document.body.removeChild(ta);
     return success;
-  } catch (err) {
+  } catch {
     return false;
   }
+};
+
+export const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as Record<string, unknown>).message);
+  }
+  return String(error);
 };
