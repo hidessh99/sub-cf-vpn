@@ -89,6 +89,18 @@ export const useAdminProxies = (page: number, limit: number, search: string) => 
     },
   });
 
+  // Delete All Proxies Mutation
+  const deleteAllProxies = useMutation<ApiResponse<any>, Error, void>({
+    mutationFn: async () => {
+      return apiClient<ApiResponse<any>>('/api/v1/proxies', {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminProxies'] });
+    },
+  });
+
   // 6. Fetch GeoIP Details
   const fetchGeoIP = async (ip: string): Promise<ApiResponse<Partial<ProxyIP>>> => {
     return apiClient<ApiResponse<Partial<ProxyIP>>>(
@@ -107,6 +119,7 @@ export const useAdminProxies = (page: number, limit: number, search: string) => 
     deleteProxy,
     importProxies,
     syncHealth,
+    deleteAllProxies,
     fetchGeoIP,
   };
 };

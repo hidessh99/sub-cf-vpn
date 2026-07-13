@@ -36,6 +36,7 @@ export const ProxyManagement: React.FC = () => {
     deleteProxy,
     importProxies,
     syncHealth,
+    deleteAllProxies,
     fetchGeoIP,
   } = useAdminProxies(page, limit, search);
 
@@ -44,7 +45,21 @@ export const ProxyManagement: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingProxy, setEditingProxy] = useState<ProxyIP | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showConfirmDeleteAll, setShowConfirmDeleteAll] = useState(false);
   const [proxyToDelete, setProxyToDelete] = useState<number | null>(null);
+
+  // Delete All Confirm Trigger
+  const handleDeleteAllConfirm = async () => {
+    try {
+      const res = await deleteAllProxies.mutateAsync();
+      showToast(res.message || 'All proxies deleted successfully', 'success');
+      setPage(1);
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setShowConfirmDeleteAll(false);
+    }
+  };
 
   // Clean Dead Proxies Trigger
   const handleSyncHealth = async () => {
@@ -114,6 +129,14 @@ export const ProxyManagement: React.FC = () => {
             <p className="text-slate-400 text-sm mt-1">Total {total} configurations registered</p>
           </div>
           <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+            <button
+              onClick={() => setShowConfirmDeleteAll(true)}
+              disabled={deleteAllProxies.isPending || proxies.length === 0}
+              className="flex-grow sm:flex-initial px-4 py-2.5 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 disabled:opacity-50 disabled:pointer-events-none text-xs font-semibold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1.5"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete All
+            </button>
             <button
               onClick={handleSyncHealth}
               disabled={syncHealth.isPending}
@@ -302,6 +325,17 @@ export const ProxyManagement: React.FC = () => {
             setShowConfirm(false);
             setProxyToDelete(null);
           }}
+        />
+
+        {/* Delete All Confirmation */}
+        <ConfirmDialog
+          isOpen={showConfirmDeleteAll}
+          title="Delete All Proxies?"
+          message="Are you sure you want to delete ALL proxy configurations? This action will completely clear the proxy list and cannot be undone."
+          confirmLabel="Delete All"
+          cancelLabel="Cancel"
+          onConfirm={handleDeleteAllConfirm}
+          onCancel={() => setShowConfirmDeleteAll(false)}
         />
       </div>
     </AdminLayout>
