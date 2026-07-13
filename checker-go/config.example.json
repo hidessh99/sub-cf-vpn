@@ -1,0 +1,17 @@
+{
+  "port": 4002,
+  "jwt": {
+    "secret": "generate-a-secure-random-secret-key-32-chars-minimum",
+    "expiresIn": "24h"
+  },
+  "admin": {
+    "username": "admin",
+    "password": "admin123"
+  },
+  "cronCheck": {
+    "enabled": false,
+    "intervalHours": 24,
+    "batchSize": 20,
+    "timeoutMs": 3000
+  }
+}
