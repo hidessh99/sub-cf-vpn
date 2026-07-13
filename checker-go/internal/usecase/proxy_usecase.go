@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 
@@ -366,7 +367,7 @@ func (u *proxyUseCaseImpl) RunHealthCheckCycle() {
 		return
 	}
 
-	u.log.Info(strings.ReplaceAll("Found {count} active proxies to check.", "{count}", string(rune(len(activeProxies)))), "CronCheck")
+	u.log.Info(strings.ReplaceAll("Found {count} active proxies to check.", "{count}", strconv.Itoa(len(activeProxies))), "CronCheck")
 
 	var deadIds []uint
 	var deadMu sync.Mutex

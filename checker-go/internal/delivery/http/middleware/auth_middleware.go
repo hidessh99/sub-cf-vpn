@@ -32,9 +32,13 @@ func authenticateRequest(c echo.Context, cfg *config.AppConfig) (*AuthContext, e
 	if idClaim, ok := claims["id"]; ok {
 		switch v := idClaim.(type) {
 		case float64:
-			idVal = uint(v)
+			if v >= 0 {
+				idVal = uint(v)
+			}
 		case int:
-			idVal = uint(v)
+			if v >= 0 {
+				idVal = uint(v)
+			}
 		}
 	}
 

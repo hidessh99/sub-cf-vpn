@@ -196,11 +196,11 @@ func fileExists(path string) bool {
 
 func readJSONFile[T any](path string) (T, error) {
 	var result T
-	file, err := os.Open(path)
+	file, err := os.Open(filepath.Clean(path)) // nolint:gosec
 	if err != nil {
 		return result, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	bytes, err := io.ReadAll(file)
 	if err != nil {

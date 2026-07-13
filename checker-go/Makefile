@@ -1,4 +1,4 @@
-.PHONY: build run dev test docker-build docker-run clean
+.PHONY: build run dev test lint docker-build docker-run clean
 
 build:
 	go build -o server ./cmd/server
@@ -11,6 +11,9 @@ dev:
 
 test:
 	go test -v ./...
+
+lint:
+	golangci-lint run
 
 docker-build:
 	docker build -t cloudflare-vpn-checker-go .

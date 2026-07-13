@@ -3,16 +3,21 @@ package handler
 import (
 	"net/http"
 
+	"github.com/hidessh99/sub-cf-vpn/checker-go/internal/infrastructure/logger"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
 type SystemHandler struct {
-	db *gorm.DB
+	db  *gorm.DB
+	log *logger.LogrusLogger
 }
 
-func NewSystemHandler(db *gorm.DB) *SystemHandler {
-	return &SystemHandler{db: db}
+func NewSystemHandler(db *gorm.DB, log *logger.LogrusLogger) *SystemHandler {
+	return &SystemHandler{
+		db:  db,
+		log: log,
+	}
 }
 
 type healthCheckResponse struct {
@@ -30,9 +35,11 @@ func (h *SystemHandler) HealthCheck(c echo.Context) error {
 	if err == nil {
 		if err = sqlDB.Ping(); err != nil {
 			dbStatus = "error"
+			h.log.Error("Health check failed - database ping failed", err, "SystemHandler")
 		}
 	} else {
 		dbStatus = "error"
+		h.log.Error("Health check failed - generic database DB connection failed", err, "SystemHandler")
 	}
 
 	overallStatus := "ok"

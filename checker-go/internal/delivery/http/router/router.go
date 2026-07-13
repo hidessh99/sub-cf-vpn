@@ -27,7 +27,7 @@ func SetupRouter(e *echo.Echo, c *container.Container) {
 		}
 
 		code := http.StatusInternalServerError
-		message := "Internal Server Error"
+		var message string
 		var validationErrors []string
 
 		var appErr *apperror.AppError
@@ -52,7 +52,11 @@ func SetupRouter(e *echo.Echo, c *container.Container) {
 			}
 		} else {
 			c.Logger.Error("Unexpected error occurred: ", err, "Router")
-			message = err.Error()
+			if os.Getenv("NODE_ENV") == "production" {
+				message = "Internal Server Error"
+			} else {
+				message = err.Error()
+			}
 		}
 
 		resp := dto.APIResponse{

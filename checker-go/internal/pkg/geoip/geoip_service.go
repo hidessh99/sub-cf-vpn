@@ -90,7 +90,7 @@ func (s *GeoIPService) lookupIpWhoIs(ip string) (*GeoIPResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("ipwho.is returned status %d", resp.StatusCode)
@@ -137,7 +137,7 @@ func (s *GeoIPService) lookupFreeIPAPI(ip string) (*GeoIPResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("freeipapi.com returned status %d", resp.StatusCode)

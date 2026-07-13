@@ -1,8 +1,8 @@
 package checker
 
 import (
-	"fmt"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -15,7 +15,7 @@ type CheckResult struct {
 
 func CheckProxy(ip string, port int, timeoutMs int) CheckResult {
 	start := time.Now()
-	address := fmt.Sprintf("%s:%d", ip, port)
+	address := net.JoinHostPort(ip, strconv.Itoa(port))
 	timeout := time.Duration(timeoutMs) * time.Millisecond
 
 	conn, err := net.DialTimeout("tcp", address, timeout)
@@ -27,7 +27,7 @@ func CheckProxy(ip string, port int, timeoutMs int) CheckResult {
 			Latency: 0,
 		}
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	latency := time.Since(start).Milliseconds()
 	return CheckResult{

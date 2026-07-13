@@ -34,19 +34,19 @@ func Wire(db *gorm.DB, cfg *config.AppConfig, log *logger.LogrusLogger) *Contain
 	geoIPService := geoip.NewGeoIPService()
 
 	// 3. Use Cases
-	authUseCase := usecase.NewAuthUseCase(adminRepo, cfg)
+	authUseCase := usecase.NewAuthUseCase(adminRepo, cfg, log)
 	proxyUseCase := usecase.NewProxyUseCase(proxyRepo, geoIPService, cfg, log)
-	domainUseCase := usecase.NewDomainUseCase(domainRepo)
-	bugUseCase := usecase.NewBugUseCase(bugRepo)
-	dashboardUseCase := usecase.NewDashboardUseCase(proxyRepo, domainRepo, bugRepo)
+	domainUseCase := usecase.NewDomainUseCase(domainRepo, log)
+	bugUseCase := usecase.NewBugUseCase(bugRepo, log)
+	dashboardUseCase := usecase.NewDashboardUseCase(proxyRepo, domainRepo, bugRepo, log)
 
 	// 4. Handlers
-	authHandler := handler.NewAuthHandler(authUseCase)
-	proxyHandler := handler.NewProxyHandler(proxyUseCase)
-	domainHandler := handler.NewDomainHandler(domainUseCase)
-	bugHandler := handler.NewBugHandler(bugUseCase)
-	dashboardHandler := handler.NewDashboardHandler(dashboardUseCase)
-	systemHandler := handler.NewSystemHandler(db)
+	authHandler := handler.NewAuthHandler(authUseCase, log)
+	proxyHandler := handler.NewProxyHandler(proxyUseCase, log)
+	domainHandler := handler.NewDomainHandler(domainUseCase, log)
+	bugHandler := handler.NewBugHandler(bugUseCase, log)
+	dashboardHandler := handler.NewDashboardHandler(dashboardUseCase, log)
+	systemHandler := handler.NewSystemHandler(db, log)
 
 	return &Container{
 		DB:               db,

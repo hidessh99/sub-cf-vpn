@@ -10,6 +10,7 @@ import (
 
 	"github.com/hidessh99/sub-cf-vpn/checker-go/internal/delivery/http/dto"
 	"github.com/hidessh99/sub-cf-vpn/checker-go/internal/domain/repository"
+	"github.com/hidessh99/sub-cf-vpn/checker-go/internal/infrastructure/logger"
 	"github.com/hidessh99/sub-cf-vpn/checker-go/internal/pkg/apperror"
 	"github.com/hidessh99/sub-cf-vpn/checker-go/internal/pkg/checker"
 	"github.com/hidessh99/sub-cf-vpn/checker-go/internal/pkg/ipvalidator"
@@ -19,10 +20,14 @@ import (
 
 type ProxyHandler struct {
 	proxyUseCase usecase.ProxyUseCase
+	log          *logger.LogrusLogger
 }
 
-func NewProxyHandler(proxyUseCase usecase.ProxyUseCase) *ProxyHandler {
-	return &ProxyHandler{proxyUseCase: proxyUseCase}
+func NewProxyHandler(proxyUseCase usecase.ProxyUseCase, log *logger.LogrusLogger) *ProxyHandler {
+	return &ProxyHandler{
+		proxyUseCase: proxyUseCase,
+		log:          log,
+	}
 }
 
 func (h *ProxyHandler) GetProxies(c echo.Context) error {
@@ -54,6 +59,7 @@ func (h *ProxyHandler) GetProxies(c echo.Context) error {
 
 	data, total, err := h.proxyUseCase.GetAllProxies(page, limit, filters)
 	if err != nil {
+		h.log.Error("GetProxies failed in usecase call", err, "ProxyHandler")
 		return err
 	}
 
@@ -74,14 +80,17 @@ func (h *ProxyHandler) GetProxies(c echo.Context) error {
 func (h *ProxyHandler) CreateProxy(c echo.Context) error {
 	var req dto.CreateProxyRequest
 	if err := c.Bind(&req); err != nil {
+		h.log.Warn("CreateProxy failed - invalid request binding", "ProxyHandler")
 		return err
 	}
 	if err := c.Validate(&req); err != nil {
+		h.log.Warn("CreateProxy failed - input validation failed", "ProxyHandler")
 		return err
 	}
 
 	proxy, err := h.proxyUseCase.CreateProxy(req)
 	if err != nil {
+		h.log.Error("CreateProxy failed in usecase call", err, "ProxyHandler")
 		return err
 	}
 
@@ -95,19 +104,23 @@ func (h *ProxyHandler) CreateProxy(c echo.Context) error {
 func (h *ProxyHandler) UpdateProxy(c echo.Context) error {
 	idVal, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
+		h.log.Warn("UpdateProxy failed - invalid ID parameter", "ProxyHandler")
 		return apperror.NewValidationError("Invalid ID parameter")
 	}
 
 	var req dto.UpdateProxyRequest
 	if err := c.Bind(&req); err != nil {
+		h.log.Warn(fmt.Sprintf("UpdateProxy failed for ID %d - invalid request binding", idVal), "ProxyHandler")
 		return err
 	}
 	if err := c.Validate(&req); err != nil {
+		h.log.Warn(fmt.Sprintf("UpdateProxy failed for ID %d - input validation failed", idVal), "ProxyHandler")
 		return err
 	}
 
 	proxy, err := h.proxyUseCase.UpdateProxy(uint(idVal), req)
 	if err != nil {
+		h.log.Error(fmt.Sprintf("UpdateProxy failed for ID %d in usecase call", idVal), err, "ProxyHandler")
 		return err
 	}
 
@@ -121,11 +134,13 @@ func (h *ProxyHandler) UpdateProxy(c echo.Context) error {
 func (h *ProxyHandler) DeleteProxy(c echo.Context) error {
 	idVal, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
+		h.log.Warn("DeleteProxy failed - invalid ID parameter", "ProxyHandler")
 		return apperror.NewValidationError("Invalid ID parameter")
 	}
 
 	err = h.proxyUseCase.DeleteProxy(uint(idVal))
 	if err != nil {
+		h.log.Error(fmt.Sprintf("DeleteProxy failed for ID %d in usecase call", idVal), err, "ProxyHandler")
 		return err
 	}
 
@@ -139,14 +154,17 @@ func (h *ProxyHandler) DeleteProxy(c echo.Context) error {
 func (h *ProxyHandler) ImportProxies(c echo.Context) error {
 	var req dto.ImportProxyListRequest
 	if err := c.Bind(&req); err != nil {
+		h.log.Warn("ImportProxies failed - invalid request binding", "ProxyHandler")
 		return err
 	}
 	if err := c.Validate(&req); err != nil {
+		h.log.Warn("ImportProxies failed - input validation failed", "ProxyHandler")
 		return err
 	}
 
 	count, err := h.proxyUseCase.ImportFromJSON(req.Proxies)
 	if err != nil {
+		h.log.Error("ImportProxies failed in usecase call", err, "ProxyHandler")
 		return err
 	}
 
@@ -160,6 +178,7 @@ func (h *ProxyHandler) ImportProxies(c echo.Context) error {
 func (h *ProxyHandler) GetPublicProxies(c echo.Context) error {
 	list, err := h.proxyUseCase.GetPublicProxyList()
 	if err != nil {
+		h.log.Error("GetPublicProxies failed in usecase call", err, "ProxyHandler")
 		return err
 	}
 	return c.JSON(http.StatusOK, list)
@@ -168,6 +187,7 @@ func (h *ProxyHandler) GetPublicProxies(c echo.Context) error {
 func (h *ProxyHandler) GetPublicProxiesGrouped(c echo.Context) error {
 	list, err := h.proxyUseCase.GetPublicProxyListGrouped()
 	if err != nil {
+		h.log.Error("GetPublicProxiesGrouped failed in usecase call", err, "ProxyHandler")
 		return err
 	}
 	return c.JSON(http.StatusOK, list)
@@ -175,6 +195,7 @@ func (h *ProxyHandler) GetPublicProxiesGrouped(c echo.Context) error {
 
 func (h *ProxyHandler) SyncHealth(c echo.Context) error {
 	h.proxyUseCase.SyncHealthCheck()
+	h.log.Info("Sync health check triggered by admin", "ProxyHandler")
 	return c.JSON(http.StatusOK, dto.APIResponse{
 		Success: true,
 		Message: "Proxy health check started in the background",
@@ -185,15 +206,18 @@ func (h *ProxyHandler) SyncHealth(c echo.Context) error {
 func (h *ProxyHandler) GeoIPLookup(c echo.Context) error {
 	ip := c.QueryParam("ip")
 	if ip == "" {
+		h.log.Warn("GeoIPLookup failed - IP address parameter missing", "ProxyHandler")
 		return apperror.NewValidationError("IP address parameter is required")
 	}
 
 	if ipvalidator.IsPrivateIP(ip) {
+		h.log.Warn("GeoIPLookup blocked - private IP lookup attempt: "+ip, "ProxyHandler")
 		return apperror.NewValidationError("Invalid public IP address")
 	}
 
 	data, err := h.proxyUseCase.LookupGeoIP(ip)
 	if err != nil {
+		h.log.Error("GeoIPLookup failed in usecase call for: "+ip, err, "ProxyHandler")
 		return err
 	}
 
@@ -247,6 +271,7 @@ func (h *ProxyHandler) CheckProxies(c echo.Context) error {
 			}
 
 			if ipvalidator.IsPrivateIP(ip) {
+				h.log.Warn("Direct proxy check blocked private IP: "+ip, "ProxyHandler")
 				results[i] = checker.CheckResult{
 					IP:      ip,
 					Port:    port,
