@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -261,11 +262,11 @@ func (h *ProxyHandler) CheckProxies(c echo.Context) error {
 				return
 			}
 
-			parts := strings.Split(clean, ":")
-			ip := parts[0]
+			ip := clean
 			port := 443
-			if len(parts) > 1 {
-				if val, err := strconv.Atoi(parts[1]); err == nil {
+			if h, p, err := net.SplitHostPort(clean); err == nil {
+				ip = h
+				if val, err := strconv.Atoi(p); err == nil {
 					port = val
 				}
 			}

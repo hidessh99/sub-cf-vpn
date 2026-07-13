@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -391,6 +392,11 @@ func (u *proxyUseCaseImpl) RunHealthCheckCycle() {
 					host = proxy.IP
 				}
 
+				// Strip port if present in the host/IP field
+				if h, _, err := net.SplitHostPort(host); err == nil {
+					host = h
+				}
+
 				if ipvalidator.IsPrivateIP(host) {
 					u.log.Warn("Cron check blocked private IP range proxy: "+host+":"+proxy.Port+". Marking as dead.", "CronCheck")
 					deadMu.Lock()
@@ -399,9 +405,8 @@ func (u *proxyUseCaseImpl) RunHealthCheckCycle() {
 					return
 				}
 
-				var port int
-				_, _ = fmtSscanf(proxy.Port, "%d", &port)
-				if port <= 0 {
+				port, err := strconv.Atoi(strings.TrimSpace(proxy.Port))
+				if err != nil || port <= 0 {
 					port = 443
 				}
 
@@ -430,23 +435,4 @@ func (u *proxyUseCaseImpl) RunHealthCheckCycle() {
 	}
 
 	u.log.Info("Health check cycle complete.", "CronCheck")
-}
-
-func fmtSscanf(str string, format string, args ...interface{}) (int, error) {
-	// A lightweight custom helper to parse port number without scanning overhead
-	var port int
-	for _, char := range str {
-		if char >= '0' && char <= '9' {
-			port = port*10 + int(char-'0')
-		} else {
-			break
-		}
-	}
-	if len(args) > 0 {
-		if ptr, ok := args[0].(*int); ok {
-			*ptr = port
-			return 1, nil
-		}
-	}
-	return 0, nil
 }
