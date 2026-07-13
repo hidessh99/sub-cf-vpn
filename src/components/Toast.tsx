@@ -8,26 +8,28 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export const useToast = () => {
   const context = useContext(ToastContext);
-  if (!context) throw new Error("useToast must be used within a ToastProvider");
+  if (!context) throw new Error('useToast must be used within a ToastProvider');
   return context;
 };
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [toasts, setToasts] = useState<{ id: number; message: string; type: 'success' | 'error' }[]>([]);
+  const [toasts, setToasts] = useState<
+    { id: number; message: string; type: 'success' | 'error' }[]
+  >([]);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
+      setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 2800); // slightly increased to let the animation play nicely
   }, []);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div 
-        id="toast-container" 
+      <div
+        id="toast-container"
         className="fixed top-6 right-4 left-4 sm:left-auto sm:right-6 z-[200] flex flex-col gap-3 pointer-events-none sm:w-[320px]"
       >
         {toasts.map((t) => {
@@ -40,22 +42,36 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               } text-white pointer-events-auto overflow-hidden animate-slide-in-right relative`}
             >
               {/* Icon Container */}
-              <div 
+              <div
                 className={`flex-shrink-0 h-7 w-7 rounded-full flex items-center justify-center ${
                   isSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
                 }`}
               >
                 {isSuccess ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 )}
               </div>
-              
+
               {/* Text Message */}
               <div className="flex-grow flex flex-col gap-0.5 pr-2">
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
@@ -65,10 +81,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               </div>
 
               {/* Expiry Progress Bar */}
-              <div 
+              <div
                 className={`absolute bottom-0 left-0 right-0 h-0.5 ${
                   isSuccess ? 'bg-emerald-500' : 'bg-rose-500'
-                } animate-toast-progress origin-left`} 
+                } animate-toast-progress origin-left`}
                 style={{ animationDuration: '2800ms' }}
               />
             </div>

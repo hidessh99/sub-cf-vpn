@@ -7,25 +7,31 @@ const parseProxyList = (text: string): ProxyItem[] => {
   try {
     const json = JSON.parse(text);
     if (Array.isArray(json)) {
-      return json.map(item => ({
-        ip: item.proxy || "",
-        port: String(item.port || ""),
-        country: item.country || "UNK",
-        provider: item.asOrganization || "UNK"
-      })).filter(x => x.ip && x.port);
+      return json
+        .map((item) => ({
+          ip: item.proxy || '',
+          port: String(item.port || ''),
+          country: item.country || 'UNK',
+          provider: item.asOrganization || 'UNK',
+        }))
+        .filter((x) => x.ip && x.port);
     }
   } catch {
     // Treat as delimited text
-    const lines = text.split(/\r?\n/).filter(x => x.trim());
-    return lines.map(line => {
-      const parts = line.split(line.includes("\t") ? "\t" : line.includes("|") ? "|" : ",");
-      return parts.length >= 2 ? {
-        ip: parts[0].trim(),
-        port: parts[1].trim(),
-        country: parts[2]?.trim() || "UNK",
-        provider: parts[3]?.trim() || "UNK"
-      } : null;
-    }).filter((x): x is ProxyItem => x !== null);
+    const lines = text.split(/\r?\n/).filter((x) => x.trim());
+    return lines
+      .map((line) => {
+        const parts = line.split(line.includes('\t') ? '\t' : line.includes('|') ? '|' : ',');
+        return parts.length >= 2
+          ? {
+              ip: parts[0].trim(),
+              port: parts[1].trim(),
+              country: parts[2]?.trim() || 'UNK',
+              provider: parts[3]?.trim() || 'UNK',
+            }
+          : null;
+      })
+      .filter((x): x is ProxyItem => x !== null);
   }
   return [];
 };

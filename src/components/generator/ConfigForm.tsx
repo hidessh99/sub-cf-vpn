@@ -63,10 +63,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        bugDropdownRef.current &&
-        !bugDropdownRef.current.contains(event.target as Node)
-      ) {
+      if (bugDropdownRef.current && !bugDropdownRef.current.contains(event.target as Node)) {
         setIsBugDropdownOpen(false);
       }
     };
@@ -99,7 +96,9 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
       <form onSubmit={onSubmit} className="space-y-4 flex-grow flex flex-col">
         {/* Username/Alias Field */}
         <div className="space-y-1">
-          <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Username / Alias</label>
+          <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">
+            Username / Alias
+          </label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -169,7 +168,12 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
         {/* Security & Domain Selector Row */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label htmlFor="security-select" className="text-[10px] font-bold text-slate-500 uppercase ml-1">Security</label>
+            <label
+              htmlFor="security-select"
+              className="text-[10px] font-bold text-slate-500 uppercase ml-1"
+            >
+              Security
+            </label>
             <select
               id="security-select"
               value={formSecurity}
@@ -181,7 +185,12 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
             </select>
           </div>
           <div className="space-y-1">
-            <label htmlFor="domain-select" className="text-[10px] font-bold text-slate-500 uppercase ml-1">Domain</label>
+            <label
+              htmlFor="domain-select"
+              className="text-[10px] font-bold text-slate-500 uppercase ml-1"
+            >
+              Domain
+            </label>
             <select
               id="domain-select"
               value={formDomain}
@@ -207,15 +216,15 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
               className="gento-input w-full rounded-xl px-4 py-3 text-xs text-left cursor-pointer flex justify-between items-center focus:outline-none"
             >
               <span className="truncate">
-                {formBug === ""
-                  ? "Default (No Bug)"
-                  : formBug === "manual"
-                  ? `Manual: ${formManualBug || "(Not entered)"}`
-                  : formBug}
+                {formBug === ''
+                  ? 'Default (No Bug)'
+                  : formBug === 'manual'
+                    ? `Manual: ${formManualBug || '(Not entered)'}`
+                    : formBug}
               </span>
               <ChevronDown
                 className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
-                  isBugDropdownOpen ? "rotate-180" : ""
+                  isBugDropdownOpen ? 'rotate-180' : ''
                 }`}
               />
             </button>
@@ -235,7 +244,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
                   {bugSearch && (
                     <button
                       type="button"
-                      onClick={() => setBugSearch("")}
+                      onClick={() => setBugSearch('')}
                       className="text-[10px] text-slate-500 hover:text-white px-1"
                     >
                       Clear
@@ -246,44 +255,44 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
                 {/* Options list */}
                 <div className="max-h-56 overflow-y-auto p-1 space-y-0.5 scrollbar-thin">
                   {/* Default Option */}
-                  {("Default (No Bug)".toLowerCase().includes(bugSearch.toLowerCase()) ||
+                  {('Default (No Bug)'.toLowerCase().includes(bugSearch.toLowerCase()) ||
                     !bugSearch) && (
                     <button
                       type="button"
                       onClick={() => {
-                        setFormBug("");
+                        setFormBug('');
                         setIsBugDropdownOpen(false);
-                        setBugSearch("");
+                        setBugSearch('');
                       }}
                       className={`w-full px-3 py-2 rounded-xl text-left text-xs flex justify-between items-center hover:bg-white/5 transition-colors ${
-                        formBug === ""
-                          ? "text-purple-400 bg-purple-500/5 font-semibold"
-                          : "text-slate-300"
+                        formBug === ''
+                          ? 'text-purple-400 bg-purple-500/5 font-semibold'
+                          : 'text-slate-300'
                       }`}
                     >
                       <span>Default (No Bug)</span>
-                      {formBug === "" && <Check className="h-3.5 w-3.5 text-purple-400" />}
+                      {formBug === '' && <Check className="h-3.5 w-3.5 text-purple-400" />}
                     </button>
                   )}
 
                   {/* Manual Option */}
-                  {("Input Manual / Custom".toLowerCase().includes(bugSearch.toLowerCase()) ||
+                  {('Input Manual / Custom'.toLowerCase().includes(bugSearch.toLowerCase()) ||
                     !bugSearch) && (
                     <button
                       type="button"
                       onClick={() => {
-                        setFormBug("manual");
+                        setFormBug('manual');
                         setIsBugDropdownOpen(false);
-                        setBugSearch("");
+                        setBugSearch('');
                       }}
                       className={`w-full px-3 py-2 rounded-xl text-left text-xs flex justify-between items-center hover:bg-white/5 transition-colors ${
-                        formBug === "manual"
-                          ? "text-purple-400 bg-purple-500/5 font-semibold"
-                          : "text-slate-300"
+                        formBug === 'manual'
+                          ? 'text-purple-400 bg-purple-500/5 font-semibold'
+                          : 'text-slate-300'
                       }`}
                     >
                       <span>Input Manual / Custom</span>
-                      {formBug === "manual" && <Check className="h-3.5 w-3.5 text-purple-400" />}
+                      {formBug === 'manual' && <Check className="h-3.5 w-3.5 text-purple-400" />}
                     </button>
                   )}
 
@@ -299,12 +308,12 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
                           onClick={() => {
                             setFormBug(b);
                             setIsBugDropdownOpen(false);
-                            setBugSearch("");
+                            setBugSearch('');
                           }}
                           className={`w-full px-3 py-2 rounded-xl text-left text-xs flex justify-between items-center hover:bg-white/5 transition-colors truncate ${
                             isSelected
-                              ? "text-purple-400 bg-purple-500/5 font-semibold"
-                              : "text-slate-300"
+                              ? 'text-purple-400 bg-purple-500/5 font-semibold'
+                              : 'text-slate-300'
                           }`}
                         >
                           <span className="truncate">{b}</span>
@@ -318,8 +327,8 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
                   {/* No options found */}
                   {bugList.filter((b) => b.toLowerCase().includes(bugSearch.toLowerCase()))
                     .length === 0 &&
-                    !("Default (No Bug)".toLowerCase().includes(bugSearch.toLowerCase())) &&
-                    !("Input Manual / Custom".toLowerCase().includes(bugSearch.toLowerCase())) && (
+                    !'Default (No Bug)'.toLowerCase().includes(bugSearch.toLowerCase()) &&
+                    !'Input Manual / Custom'.toLowerCase().includes(bugSearch.toLowerCase()) && (
                       <div className="py-6 text-center text-xs text-slate-500">
                         Tidak ditemukan. Pilih 'Input Manual' untuk custom bug.
                       </div>
@@ -346,7 +355,10 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
                 onChange={(e) => setFormWildcard(e.target.checked)}
                 className="w-4 h-4 rounded bg-white/10 border-white/10 text-purple-600 focus:ring-0 cursor-pointer"
               />
-              <label htmlFor="wildcard" className="text-xs text-slate-400 cursor-pointer select-none">
+              <label
+                htmlFor="wildcard"
+                className="text-xs text-slate-400 cursor-pointer select-none"
+              >
                 Wildcard (bug.domain.com)
               </label>
             </div>
@@ -361,10 +373,10 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
             !selectedProxy
               ? 'from-slate-700 to-slate-800 cursor-not-allowed opacity-55 text-slate-400'
               : activeTab === 'vless'
-              ? 'from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500'
-              : activeTab === 'trojan'
-              ? 'from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500'
-              : 'from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500'
+                ? 'from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500'
+                : activeTab === 'trojan'
+                  ? 'from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500'
+                  : 'from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500'
           } text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] mt-auto`}
         >
           {selectedProxy ? `GENERATE ${activeTab.toUpperCase()}` : 'CHOOSE A SERVER FIRST'}

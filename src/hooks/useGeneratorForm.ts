@@ -53,6 +53,6 @@ export const useGeneratorForm = (domains: string[]) => {
     setFormWildcard,
     manualAlias,
     setManualAlias,
-    resetFormValues
+    resetFormValues,
   };
 };

@@ -96,7 +96,7 @@ export const DomainManagement: React.FC = () => {
       const parsed = JSON.parse(importJson);
       const response = await apiClient('/api/v1/domains/import', {
         method: 'POST',
-        body: JSON.stringify(parsed)
+        body: JSON.stringify(parsed),
       });
       if (response.success) {
         showToast(response.message || 'Domains imported successfully', 'success');
@@ -115,7 +115,9 @@ export const DomainManagement: React.FC = () => {
         <div className="flex justify-between items-center w-full">
           <div>
             <h2 className="text-2xl font-bold text-white tracking-tight">Domain Management</h2>
-            <p className="text-slate-400 text-sm mt-1">Manage domains that are allowed in configurations</p>
+            <p className="text-slate-400 text-sm mt-1">
+              Manage domains that are allowed in configurations
+            </p>
           </div>
           <button
             onClick={() => setShowImportModal(true)}
@@ -155,14 +157,36 @@ export const DomainManagement: React.FC = () => {
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <svg className="animate-spin h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
             </div>
           ) : domains.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-1.5">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-slate-600">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9s2.015-9 4.5-9m0 0a9.015 9.015 0 018.716 6.747M12 3a9.015 9.015 0 00-8.716 6.747M3.75 12h16.5" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-10 h-10 text-slate-600"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9s2.015-9 4.5-9m0 0a9.015 9.015 0 018.716 6.747M12 3a9.015 9.015 0 00-8.716 6.747M3.75 12h16.5"
+                />
               </svg>
               <span className="text-xs font-semibold">No domains registered</span>
             </div>
@@ -215,8 +239,18 @@ export const DomainManagement: React.FC = () => {
           <div className="w-full max-w-lg p-6 rounded-3xl gento-card backdrop-blur-2xl border border-white/10 shadow-2xl flex flex-col gap-5 max-h-[90vh] overflow-y-auto animate-fade-in">
             <div className="flex justify-between items-center pb-3 border-b border-white/5">
               <h3 className="text-lg font-bold text-white">Import Domains JSON</h3>
-              <button onClick={() => setShowImportModal(false)} className="text-slate-400 hover:text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-6 h-6"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -224,7 +258,9 @@ export const DomainManagement: React.FC = () => {
 
             <form onSubmit={handleImport} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">JSON Data (Array of strings)</label>
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  JSON Data (Array of strings)
+                </label>
                 <textarea
                   rows={8}
                   value={importJson}

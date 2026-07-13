@@ -35,12 +35,15 @@ export const ProxyImportModal: React.FC<ProxyImportModalProps> = ({
       if (!Array.isArray(parsed)) {
         throw new Error('JSON must be an array of proxy objects.');
       }
-      
+
       await onImport(importJson);
       showToast('Proxies imported successfully!', 'success');
       onClose();
     } catch (err) {
-      showToast(getErrorMessage(err) || 'Failed to import proxies. Make sure it is valid JSON.', 'error');
+      showToast(
+        getErrorMessage(err) || 'Failed to import proxies. Make sure it is valid JSON.',
+        'error'
+      );
     } finally {
       setIsSubmitting(false);
     }

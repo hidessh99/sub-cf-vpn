@@ -49,7 +49,7 @@ const Generator: React.FC = () => {
     setFormWildcard,
     manualAlias,
     setManualAlias,
-    resetFormValues
+    resetFormValues,
   } = useGeneratorForm(domains);
 
   // Results

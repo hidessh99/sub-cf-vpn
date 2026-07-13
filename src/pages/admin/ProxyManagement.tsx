@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { Search, Loader2, Plus, Download, RefreshCw, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import {
+  Search,
+  Loader2,
+  Plus,
+  Download,
+  RefreshCw,
+  Trash2,
+  CheckCircle2,
+  AlertTriangle,
+} from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
@@ -167,7 +176,9 @@ export const ProxyManagement: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-32 text-slate-500 gap-2">
                 <AlertTriangle className="w-12 h-12 text-slate-600" />
                 <span className="text-sm font-semibold">No proxies found</span>
-                <span className="text-xs">Add a new proxy configuration or import a JSON list.</span>
+                <span className="text-xs">
+                  Add a new proxy configuration or import a JSON list.
+                </span>
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
@@ -193,7 +204,9 @@ export const ProxyManagement: React.FC = () => {
                           {p.country || 'N/A'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 truncate max-w-[200px]">{p.as_organization || 'N/A'}</td>
+                      <td className="px-6 py-4 truncate max-w-[200px]">
+                        {p.as_organization || 'N/A'}
+                      </td>
                       <td className="px-6 py-4 font-mono text-purple-400">{p.colo || 'N/A'}</td>
                       <td className="px-6 py-4 font-mono">{p.latency}ms</td>
                       <td className="px-6 py-4">

@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Globe, ChevronDown, Link2, RotateCw, Ghost, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Search,
+  Globe,
+  ChevronDown,
+  Link2,
+  RotateCw,
+  Ghost,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { ProxyItem } from '../../types';
 import { ProxyRow } from './ProxyRow';
 import { ProxyStatus, getProxyKey } from '../../hooks/useProxyStatusChecker';
@@ -36,7 +45,7 @@ export const ProxyList: React.FC<ProxyListProps> = ({
 
   // Available countries derived from raw proxies list
   const availableCountries = useMemo(() => {
-    const countries = proxies.map(p => p.country);
+    const countries = proxies.map((p) => p.country);
     const unique = Array.from(new Set(countries)).sort();
     return ['All', ...unique];
   }, [proxies]);
@@ -46,14 +55,13 @@ export const ProxyList: React.FC<ProxyListProps> = ({
     let result = [...proxies];
 
     if (selectedCountry !== 'All') {
-      result = result.filter(p => p.country === selectedCountry);
+      result = result.filter((p) => p.country === selectedCountry);
     }
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(p =>
-        p.provider.toLowerCase().includes(query) ||
-        p.ip.includes(query)
+      result = result.filter(
+        (p) => p.provider.toLowerCase().includes(query) || p.ip.includes(query)
       );
     }
 
@@ -108,7 +116,7 @@ export const ProxyList: React.FC<ProxyListProps> = ({
           >
             <Link2 className="h-4 w-4" />
           </button>
-          
+
           <button
             onClick={() => onReload(customUrl)}
             className="w-10 h-10 rounded-xl bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 text-purple-400 flex items-center justify-center transition-all flex-none"

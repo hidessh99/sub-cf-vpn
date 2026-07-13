@@ -36,7 +36,11 @@ export const useAdminProxies = (page: number, limit: number, search: string) => 
   });
 
   // 2. Edit Proxy Mutation
-  const editProxy = useMutation<ApiResponse<ProxyIP>, Error, { id: number; data: Omit<ProxyIP, 'id'> }>({
+  const editProxy = useMutation<
+    ApiResponse<ProxyIP>,
+    Error,
+    { id: number; data: Omit<ProxyIP, 'id'> }
+  >({
     mutationFn: async ({ id, data }) => {
       return apiClient<ApiResponse<ProxyIP>>(`/api/v1/proxies/${id}`, {
         method: 'PUT',
