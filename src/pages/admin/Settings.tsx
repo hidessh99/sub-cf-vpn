@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { adminFetch } from '../../utils/adminApi';
+import { apiClient } from '../../utils/apiClient';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
+import { getErrorMessage } from '../../utils/common';
 
 export const Settings: React.FC = () => {
   const [oldPassword, setOldPassword] = useState('');
@@ -27,7 +28,7 @@ export const Settings: React.FC = () => {
 
     setSubmitting(true);
     try {
-      const response = await adminFetch('/api/v1/auth/password', {
+      const response = await apiClient('/api/v1/auth/password', {
         method: 'PUT',
         body: JSON.stringify({ oldPassword, newPassword }),
       });
@@ -38,8 +39,8 @@ export const Settings: React.FC = () => {
         setNewPassword('');
         setConfirmPassword('');
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to change password', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -50,14 +51,18 @@ export const Settings: React.FC = () => {
       <div className="flex flex-col gap-6 w-full max-w-xl">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-tight">Account Settings</h2>
-          <p className="text-slate-400 text-sm mt-1">Configure your administrator account credentials</p>
+          <p className="text-slate-400 text-sm mt-1">
+            Configure your administrator account credentials
+          </p>
         </div>
 
         <div className="p-6 rounded-3xl gento-card backdrop-blur-xl border border-white/5 shadow-2xl">
           <h3 className="text-sm font-semibold text-white mb-6">Change Password</h3>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Current Password</label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                Current Password
+              </label>
               <input
                 type="password"
                 placeholder="Enter current password"
@@ -70,7 +75,9 @@ export const Settings: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">New Password</label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                New Password
+              </label>
               <input
                 type="password"
                 placeholder="Enter new password (min. 6 chars)"
@@ -83,7 +90,9 @@ export const Settings: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Confirm New Password</label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                Confirm New Password
+              </label>
               <input
                 type="password"
                 placeholder="Confirm new password"

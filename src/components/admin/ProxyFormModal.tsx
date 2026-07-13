@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Globe, Loader2 } from 'lucide-react';
-import { ProxyIP, ApiResponse } from '../../types/admin';
+import { ProxyIP, ApiResponse } from '../../types';
+import { getErrorMessage } from '../../utils/common';
 
 interface ProxyFormModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface ProxyFormModalProps {
 
 const parseIpAndPort = (input: string): { ip: string; port?: string } => {
   const clean = input.trim();
-  
+
   // Handle [IPv6]:port format (e.g. [2001:db8::1]:443)
   if (clean.startsWith('[') && clean.includes(']')) {
     const closingBracketIndex = clean.indexOf(']');
@@ -27,12 +28,12 @@ const parseIpAndPort = (input: string): { ip: string; port?: string } => {
     }
     return { ip };
   }
-  
+
   // Handle standard IPv4:port or domain:port format (e.g. 1.1.1.1:443, example.com:8443)
   if (clean.includes(':')) {
     const parts = clean.split(':');
     const lastPart = parts[parts.length - 1];
-    
+
     // Check if the last part is a numeric port
     if (/^\d+$/.test(lastPart)) {
       const port = lastPart;
@@ -46,7 +47,7 @@ const parseIpAndPort = (input: string): { ip: string; port?: string } => {
       }
     }
   }
-  
+
   return { ip: clean };
 };
 
@@ -120,9 +121,7 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
@@ -174,8 +173,8 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
       } else {
         showToast(response.message || 'GeoIP lookup returned no data', 'error');
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to fetch GeoIP details', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setIsFetchingGeo(false);
     }
@@ -194,12 +193,12 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
         proxy: finalProxy,
         asn: Number(formData.asn) || null,
         latency: Number(formData.latency) || 0,
-      } as any;
+      } as Omit<ProxyIP, 'id'>;
 
       await onSave(payload);
       onClose();
-    } catch (err: any) {
-      showToast(err.message || 'Failed to save configuration', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     }
   };
 
@@ -267,7 +266,9 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Port</label>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Port
+            </label>
             <input
               type="text"
               name="port"
@@ -292,7 +293,9 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">ASN</label>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              ASN
+            </label>
             <input
               type="number"
               name="asn"
@@ -318,7 +321,9 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Colo</label>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Colo
+            </label>
             <input
               type="text"
               name="colo"
@@ -344,7 +349,9 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">City</label>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              City
+            </label>
             <input
               type="text"
               name="city"
@@ -356,7 +363,9 @@ export const ProxyFormModal: React.FC<ProxyFormModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Region</label>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Region
+            </label>
             <input
               type="text"
               name="region"

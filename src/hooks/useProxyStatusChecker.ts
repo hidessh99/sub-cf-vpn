@@ -17,6 +17,7 @@ export const useProxyStatusChecker = () => {
   const checkQueue = useRef<ProxyItem[]>([]);
   const activeChecks = useRef(0);
   const mountedRef = useRef(true);
+  const statusMapRef = useRef<Record<string, ProxyStatus>>({});
 
   useEffect(() => {
     mountedRef.current = true;
@@ -24,6 +25,11 @@ export const useProxyStatusChecker = () => {
       mountedRef.current = false;
     };
   }, []);
+
+  // Sync state to ref to avoid stale closures
+  useEffect(() => {
+    statusMapRef.current = proxyStatusMap;
+  }, [proxyStatusMap]);
 
   const processCheckQueue = useCallback(async () => {
     if (
@@ -40,10 +46,10 @@ export const useProxyStatusChecker = () => {
     activeChecks.current++;
 
     // Mark current batch as loading
-    setProxyStatusMap(prev => {
+    setProxyStatusMap((prev) => {
       const next = { ...prev };
       let changed = false;
-      proxies.forEach(p => {
+      proxies.forEach((p) => {
         const key = getProxyKey(p);
         if (next[key]?.status !== 'active' && next[key]?.status !== 'dead') {
           next[key] = { status: 'loading', latency: 0 };
@@ -58,7 +64,7 @@ export const useProxyStatusChecker = () => {
     const start = performance.now();
 
     try {
-      const ipList = proxies.map(p => `${p.ip}:${p.port}`).join(',');
+      const ipList = proxies.map((p) => `${p.ip}:${p.port}`).join(',');
       const res = await fetch(`${CONFIG.apiCheckUrl}${ipList}`, {
         signal: controller.signal,
       });
@@ -69,7 +75,7 @@ export const useProxyStatusChecker = () => {
       const results = Array.isArray(data) ? data : [data];
 
       if (mountedRef.current) {
-        setProxyStatusMap(prev => {
+        setProxyStatusMap((prev) => {
           const next = { ...prev };
           proxies.forEach((p, idx) => {
             const result = results[idx];
@@ -93,9 +99,9 @@ export const useProxyStatusChecker = () => {
       }
     } catch {
       if (mountedRef.current) {
-        setProxyStatusMap(prev => {
+        setProxyStatusMap((prev) => {
           const next = { ...prev };
-          proxies.forEach(p => {
+          proxies.forEach((p) => {
             next[getProxyKey(p)] = { status: 'dead', latency: 0 };
           });
           return next;
@@ -109,20 +115,23 @@ export const useProxyStatusChecker = () => {
     }
   }, []);
 
-  const queueChecks = useCallback((proxies: ProxyItem[]) => {
-    // Add only unchecked proxies to the queue
-    const unchecked = proxies.filter(p => {
-      const status = proxyStatusMap[getProxyKey(p)]?.status;
-      return !status || status === 'unknown';
-    });
+  const queueChecks = useCallback(
+    (proxies: ProxyItem[]) => {
+      // Add only unchecked proxies to the queue using the Ref to avoid dependency change loops
+      const unchecked = proxies.filter((p) => {
+        const status = statusMapRef.current[getProxyKey(p)]?.status;
+        return !status || status === 'unknown';
+      });
 
-    if (unchecked.length > 0) {
-      checkQueue.current = [...checkQueue.current, ...unchecked];
-      for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
-        processCheckQueue();
+      if (unchecked.length > 0) {
+        checkQueue.current = [...checkQueue.current, ...unchecked];
+        for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
+          processCheckQueue();
+        }
       }
-    }
-  }, [proxyStatusMap, processCheckQueue]);
+    },
+    [processCheckQueue]
+  );
 
   const clearStatusMap = useCallback(() => {
     setProxyStatusMap({});

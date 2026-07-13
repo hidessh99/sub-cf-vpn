@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Globe, ChevronDown, Link2, RotateCw, Ghost, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Search,
+  Globe,
+  ChevronDown,
+  Link2,
+  RotateCw,
+  Ghost,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { ProxyItem } from '../../types';
 import { ProxyRow } from './ProxyRow';
 import { ProxyStatus, getProxyKey } from '../../hooks/useProxyStatusChecker';
@@ -36,7 +45,7 @@ export const ProxyList: React.FC<ProxyListProps> = ({
 
   // Available countries derived from raw proxies list
   const availableCountries = useMemo(() => {
-    const countries = proxies.map(p => p.country);
+    const countries = proxies.map((p) => p.country);
     const unique = Array.from(new Set(countries)).sort();
     return ['All', ...unique];
   }, [proxies]);
@@ -46,14 +55,13 @@ export const ProxyList: React.FC<ProxyListProps> = ({
     let result = [...proxies];
 
     if (selectedCountry !== 'All') {
-      result = result.filter(p => p.country === selectedCountry);
+      result = result.filter((p) => p.country === selectedCountry);
     }
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(p =>
-        p.provider.toLowerCase().includes(query) ||
-        p.ip.includes(query)
+      result = result.filter(
+        (p) => p.provider.toLowerCase().includes(query) || p.ip.includes(query)
       );
     }
 
@@ -104,14 +112,16 @@ export const ProxyList: React.FC<ProxyListProps> = ({
                 : 'bg-purple-600/20 hover:bg-purple-600/40 text-purple-400 border-purple-500/30'
             }`}
             title="Custom URL"
+            aria-label="Toggle Custom URL input"
           >
             <Link2 className="h-4 w-4" />
           </button>
-          
+
           <button
             onClick={() => onReload(customUrl)}
             className="w-10 h-10 rounded-xl bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 text-purple-400 flex items-center justify-center transition-all flex-none"
             title="Reload List"
+            aria-label="Reload proxy list"
           >
             <RotateCw className="h-4 w-4" />
           </button>
@@ -142,6 +152,8 @@ export const ProxyList: React.FC<ProxyListProps> = ({
           <select
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
+            id="country-filter-select"
+            aria-label="Filter proxies by country"
             className="w-full bg-slate-800/50 border border-white/5 hover:border-purple-500/30 text-slate-300 rounded-xl pl-10 pr-8 py-2.5 text-xs font-bold appearance-none cursor-pointer focus:outline-none focus:border-purple-500/50 transition-all shadow-sm"
           >
             {availableCountries.map((c) => (
@@ -209,6 +221,7 @@ export const ProxyList: React.FC<ProxyListProps> = ({
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
+                aria-label="Halaman Sebelumnya"
                 className={`w-8 h-8 rounded-lg bg-slate-800 border border-white/5 text-slate-400 flex items-center justify-center ${
                   currentPage === 1
                     ? 'opacity-50 cursor-not-allowed'
@@ -217,12 +230,13 @@ export const ProxyList: React.FC<ProxyListProps> = ({
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-xs text-slate-500 font-mono mx-2">
+              <span className="text-xs text-slate-300 font-mono mx-2">
                 {currentPage}/{totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
+                aria-label="Halaman Berikutnya"
                 className={`w-8 h-8 rounded-lg bg-slate-800 border border-white/5 text-slate-400 flex items-center justify-center ${
                   currentPage === totalPages
                     ? 'opacity-50 cursor-not-allowed'

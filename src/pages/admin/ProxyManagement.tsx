@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
-import { Search, Loader2, Plus, Download, RefreshCw, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import {
+  Search,
+  Loader2,
+  Plus,
+  Download,
+  RefreshCw,
+  Trash2,
+  CheckCircle2,
+  AlertTriangle,
+} from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { ConfirmDialog } from '../../components/admin/ConfirmDialog';
 import { useAdminProxies } from '../../hooks/useAdminProxies';
-import { ProxyIP } from '../../types/admin';
+import { ProxyIP } from '../../types';
 import { ProxyFormModal } from '../../components/admin/ProxyFormModal';
 import { ProxyImportModal } from '../../components/admin/ProxyImportModal';
+import { getErrorMessage } from '../../utils/common';
 
 export const ProxyManagement: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -41,8 +51,8 @@ export const ProxyManagement: React.FC = () => {
     try {
       const res = await syncHealth.mutateAsync();
       showToast(res.message || 'Proxy health check started in the background', 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Failed to trigger proxy health check', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     }
   };
 
@@ -70,8 +80,8 @@ export const ProxyManagement: React.FC = () => {
       if (proxies.length === 1 && page > 1) {
         setPage((p) => p - 1);
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to delete proxy', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setShowConfirm(false);
       setProxyToDelete(null);
@@ -166,7 +176,9 @@ export const ProxyManagement: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-32 text-slate-500 gap-2">
                 <AlertTriangle className="w-12 h-12 text-slate-600" />
                 <span className="text-sm font-semibold">No proxies found</span>
-                <span className="text-xs">Add a new proxy configuration or import a JSON list.</span>
+                <span className="text-xs">
+                  Add a new proxy configuration or import a JSON list.
+                </span>
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
@@ -192,7 +204,9 @@ export const ProxyManagement: React.FC = () => {
                           {p.country || 'N/A'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 truncate max-w-[200px]">{p.as_organization || 'N/A'}</td>
+                      <td className="px-6 py-4 truncate max-w-[200px]">
+                        {p.as_organization || 'N/A'}
+                      </td>
                       <td className="px-6 py-4 font-mono text-purple-400">{p.colo || 'N/A'}</td>
                       <td className="px-6 py-4 font-mono">{p.latency}ms</td>
                       <td className="px-6 py-4">
