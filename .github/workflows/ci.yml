@@ -1,8 +1,5 @@
 name: Go CI
 
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
-
 on:
   push:
     branches: [ master, main ]
@@ -34,12 +31,13 @@ jobs:
           go mod download
 
       - name: Run GolangCI-Lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          working-directory: checker-go
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          cd checker-go
+          golangci-lint run
 
       - name: Run Tests
         run: |
           cd checker-go
           go test -v ./...
+
