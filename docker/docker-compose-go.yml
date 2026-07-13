@@ -25,7 +25,7 @@ services:
     # build:
     #   context: ../checker-go
     #   dockerfile: Dockerfile
-    image: ghcr.io/hidessh99/sub-cf-vpn-checker-go:${VERSION}
+    image: ghcr.io/hidessh99/sub-cf-vpn/checker-go:${VERSION}
     # container_name: ${CONTAINER_NAME}_checker
     deploy:
       resources:
