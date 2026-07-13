@@ -50,7 +50,7 @@ jobs:
         with:
           registry: ${{ env.GHCR_REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GH_TOKEN }}
 
       - name: Extract Docker Metadata for Web Frontend
         id: meta_web
