@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"net"
 	"strconv"
 	"strings"
@@ -27,7 +28,7 @@ type ProxyUseCase interface {
 	GetPublicProxyListGrouped() (map[string][]string, error)
 	LookupGeoIP(ip string) (*geoip.GeoIPResult, error)
 	SyncHealthCheck()
-	RunHealthCheckCycle()
+	RunHealthCheckCycle(ctx context.Context)
 }
 
 type proxyUseCaseImpl struct {
@@ -327,10 +328,10 @@ func (u *proxyUseCaseImpl) LookupGeoIP(ip string) (*geoip.GeoIPResult, error) {
 }
 
 func (u *proxyUseCaseImpl) SyncHealthCheck() {
-	go u.RunHealthCheckCycle()
+	go u.RunHealthCheckCycle(context.Background())
 }
 
-func (u *proxyUseCaseImpl) RunHealthCheckCycle() {
+func (u *proxyUseCaseImpl) RunHealthCheckCycle(ctx context.Context) {
 	u.mu.Lock()
 	if u.isChecking {
 		u.mu.Unlock()
@@ -375,6 +376,13 @@ func (u *proxyUseCaseImpl) RunHealthCheckCycle() {
 
 	// Process in batches
 	for i := 0; i < len(activeProxies); i += batchSize {
+		select {
+		case <-ctx.Done():
+			u.log.Info("Health check cycle cancelled due to server shutdown.", "CronCheck")
+			return
+		default:
+		}
+
 		end := i + batchSize
 		if end > len(activeProxies) {
 			end = len(activeProxies)

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 
@@ -62,11 +63,16 @@ func main() {
 	e.HideBanner = true
 	e.HidePort = true
 
+	// Create context that is cancelled on shutdown
+	rootCtx, rootCancel := context.WithCancel(context.Background())
+	defer rootCancel()
+
 	// Setup routes and middlewares
 	router.SetupRouter(e, c)
 
 	// Start proxy health check cron/ticker
-	startProxyHealthCron(c)
+	var cronWG sync.WaitGroup
+	startProxyHealthCron(rootCtx, c, &cronWG)
 
 	// Start Echo HTTP server
 	port := cfg.Port
@@ -85,10 +91,15 @@ func main() {
 
 	log.Info("Shutdown signal received. Starting graceful shutdown...", "System")
 
-	// 1. Shutdown HTTP server (timeout 5 seconds)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := e.Shutdown(ctx); err != nil {
+	// Cancel background context and wait for active checks to finish
+	rootCancel()
+	cronWG.Wait()
+	log.Info("Background cron check tasks stopped.", "CronCheck")
+
+	// 1. Shutdown HTTP server (timeout 10 seconds)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	if err := e.Shutdown(shutdownCtx); err != nil {
 		log.Error("HTTP server shutdown error", err, "System")
 	} else {
 		log.Info("HTTP server stopped accepting new connections.", "System")
@@ -107,7 +118,7 @@ func main() {
 	log.Info("Graceful shutdown complete. Exiting process.", "System")
 }
 
-func startProxyHealthCron(c *container.Container) {
+func startProxyHealthCron(ctx context.Context, c *container.Container, wg *sync.WaitGroup) {
 	cronConfig := c.Config.CronCheck
 	if !cronConfig.Enabled {
 		c.Logger.Info("Cron check is disabled in config.", "CronCheck")
@@ -122,16 +133,31 @@ func startProxyHealthCron(c *container.Container) {
 	c.Logger.Info(fmt.Sprintf("Proxy health check scheduled every %d hours.", intervalHours), "CronCheck")
 
 	// Trigger initial run after 5 seconds
+	wg.Add(1)
 	go func() {
-		time.Sleep(5 * time.Second)
-		c.ProxyUseCase.RunHealthCheckCycle()
+		defer wg.Done()
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(5 * time.Second):
+			c.ProxyUseCase.RunHealthCheckCycle(ctx)
+		}
 	}()
 
 	// Ticker for subsequent runs
 	ticker := time.NewTicker(time.Duration(intervalHours) * time.Hour)
+	wg.Add(1)
 	go func() {
-		for range ticker.C {
-			c.ProxyUseCase.RunHealthCheckCycle()
+		defer wg.Done()
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				c.Logger.Info("Cron checker ticker stopped.", "CronCheck")
+				return
+			case <-ticker.C:
+				c.ProxyUseCase.RunHealthCheckCycle(ctx)
+			}
 		}
 	}()
 }
