@@ -24,7 +24,7 @@ type CustomValidator struct {
 
 func (cv *CustomValidator) Validate(i interface{}) error {
 	if err := cv.Validator.Struct(i); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return err
 	}
 	return nil
 }
@@ -33,11 +33,11 @@ func fmtValidationErrorMessage(err validator.FieldError) string {
 	field := err.Field()
 	switch err.Tag() {
 	case "required":
-		return field + ": is required"
+		return field + " is required"
 	case "min":
-		return field + ": must be at least " + err.Param() + " characters long"
+		return field + " must be at least " + err.Param() + " characters long"
 	default:
-		return field + ": validation failed on '" + err.Tag() + "'"
+		return field + " validation failed on '" + err.Tag() + "'"
 	}
 }
 
@@ -73,10 +73,12 @@ func NewEcho(cfg *config.AppConfig, log port.Logger) *echo.Echo {
 			}
 		} else if errors.As(err, &valErr) {
 			code = http.StatusBadRequest
-			message = "Validation failed"
+			var errMsgs []string
 			for _, ve := range valErr {
-				validationErrors = append(validationErrors, fmtValidationErrorMessage(ve))
+				errMsgs = append(errMsgs, fmtValidationErrorMessage(ve))
 			}
+			message = strings.Join(errMsgs, ", ")
+			validationErrors = errMsgs
 		} else {
 			log.Error("Unexpected error occurred: ", err, "Router")
 			if os.Getenv("NODE_ENV") == "production" {
