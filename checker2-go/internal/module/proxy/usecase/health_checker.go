@@ -12,7 +12,7 @@ import (
 )
 
 func (u *proxyUseCase) SyncHealthCheck(ctx context.Context) {
-	go u.RunHealthCheckCycle(ctx)
+	go u.RunHealthCheckCycle(context.WithoutCancel(ctx))
 }
 
 func (u *proxyUseCase) RunHealthCheckCycle(ctx context.Context) {
@@ -100,11 +100,17 @@ func (u *proxyUseCase) RunHealthCheckCycle(ctx context.Context) {
 					port = 443
 				}
 
+				proxyAddr := host + ":" + strconv.Itoa(port)
+				u.log.Info("Checking proxy: " + proxyAddr, "CronCheck")
+
 				res := u.proxyChecker.Check(host, port, timeoutMs)
 				if !res.ProxyIP {
+					u.log.Warn("Proxy check failed (dead): " + proxyAddr + " - latency: " + strconv.Itoa(res.Latency) + "ms", "CronCheck")
 					deadMu.Lock()
 					deadIds = append(deadIds, proxy.ID)
 					deadMu.Unlock()
+				} else {
+					u.log.Info("Proxy check success (alive): " + proxyAddr + " - latency: " + strconv.Itoa(res.Latency) + "ms", "CronCheck")
 				}
 			}(p)
 		}
