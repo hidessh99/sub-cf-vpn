@@ -1,0 +1,81 @@
+name: Go CI (checker2-go)
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'checker2-go/**'
+      - '.github/workflows/checker2-ci.yml'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - 'checker2-go/**'
+      - '.github/workflows/checker2-ci.yml'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'checker2-go/go.mod'
+          cache: true
+
+      - name: Install Dependencies
+        run: |
+          cd checker2-go
+          go mod download
+
+      - name: Run Tests
+        run: |
+          cd checker2-go
+          go test -v ./...
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/checker2-go
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./checker2-go
+          file: ./checker2-go/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
