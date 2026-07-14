@@ -1,4 +1,4 @@
-package usecase
+package test
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/infrastructure/config"
 	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/module/proxy/domain"
+	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/module/proxy/usecase"
 	"github.com/hidessh99/sub-cf-vpn/checker2-go/pkg/apperror"
 )
 
@@ -197,28 +197,9 @@ func (m *MockProxyChecker) Check(host string, port int, timeoutMs int) domain.Ch
 	}
 }
 
-type dummyLogger struct{}
-
-func (d dummyLogger) Debug(msg string, ctx string)             {}
-func (d dummyLogger) Info(msg string, ctx string)              {}
-func (d dummyLogger) Warn(msg string, ctx string)              {}
-func (d dummyLogger) Error(msg string, err error, ctx string) {}
-
-func ptrString(s string) *string {
-	return &s
-}
-
-func ptrInt(i int) *int {
-	return &i
-}
-
-func ptrBool(b bool) *bool {
-	return &b
-}
-
 func TestCreateProxy(t *testing.T) {
 	mockRepo := &MockProxyRepository{}
-	proxyUC := NewProxyUseCase(mockRepo, &MockProxyChecker{}, &MockGeoIPService{}, &config.AppConfig{}, dummyLogger{})
+	proxyUC := usecase.NewProxyUseCase(mockRepo, &MockProxyChecker{}, &MockGeoIPService{}, testConfig(), testLogger())
 
 	ipVal := "1.1.1.1"
 	proxyVal := "test-proxy"
@@ -265,7 +246,7 @@ func TestCreateProxy(t *testing.T) {
 
 func TestGetAllProxies(t *testing.T) {
 	mockRepo := &MockProxyRepository{}
-	proxyUC := NewProxyUseCase(mockRepo, &MockProxyChecker{}, &MockGeoIPService{}, &config.AppConfig{}, dummyLogger{})
+	proxyUC := usecase.NewProxyUseCase(mockRepo, &MockProxyChecker{}, &MockGeoIPService{}, testConfig(), testLogger())
 
 	us := "US"
 	id := "ID"
@@ -304,7 +285,7 @@ func TestGetAllProxies(t *testing.T) {
 
 func TestUpdateProxy(t *testing.T) {
 	mockRepo := &MockProxyRepository{}
-	proxyUC := NewProxyUseCase(mockRepo, &MockProxyChecker{}, &MockGeoIPService{}, &config.AppConfig{}, dummyLogger{})
+	proxyUC := usecase.NewProxyUseCase(mockRepo, &MockProxyChecker{}, &MockGeoIPService{}, testConfig(), testLogger())
 
 	created := &domain.Proxy{IP: "1.1.1.1", Port: "443", Latency: 100, IsActive: true}
 	_ = proxyUC.CreateProxy(context.Background(), created)
@@ -334,7 +315,7 @@ func TestUpdateProxy(t *testing.T) {
 
 func TestDeleteProxy(t *testing.T) {
 	mockRepo := &MockProxyRepository{}
-	proxyUC := NewProxyUseCase(mockRepo, &MockProxyChecker{}, &MockGeoIPService{}, &config.AppConfig{}, dummyLogger{})
+	proxyUC := usecase.NewProxyUseCase(mockRepo, &MockProxyChecker{}, &MockGeoIPService{}, testConfig(), testLogger())
 
 	created := &domain.Proxy{IP: "1.1.1.1", Port: "443"}
 	_ = proxyUC.CreateProxy(context.Background(), created)

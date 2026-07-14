@@ -1,4 +1,4 @@
-package usecase
+package test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/module/bug/domain"
+	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/module/bug/usecase"
 	"github.com/hidessh99/sub-cf-vpn/checker2-go/pkg/apperror"
 )
 
@@ -79,16 +80,10 @@ func (m *MockBugRepository) Count(ctx context.Context) (int64, error) {
 	return int64(len(m.db)), nil
 }
 
-type dummyLogger struct{}
-
-func (d dummyLogger) Debug(msg string, ctx string)             {}
-func (d dummyLogger) Info(msg string, ctx string)              {}
-func (d dummyLogger) Warn(msg string, ctx string)              {}
-func (d dummyLogger) Error(msg string, err error, ctx string) {}
 
 func TestCreateBug(t *testing.T) {
 	mockRepo := &MockBugRepository{}
-	bugUC := NewBugUseCase(mockRepo, dummyLogger{})
+	bugUC := usecase.NewBugUseCase(mockRepo, dummyLogger{})
 
 	// Success create
 	bug, err := bugUC.CreateBug(context.Background(), "m.youtube.com")
@@ -130,7 +125,7 @@ func TestCreateBug(t *testing.T) {
 
 func TestGetAllBugs(t *testing.T) {
 	mockRepo := &MockBugRepository{}
-	bugUC := NewBugUseCase(mockRepo, dummyLogger{})
+	bugUC := usecase.NewBugUseCase(mockRepo, dummyLogger{})
 
 	_, _ = bugUC.CreateBug(context.Background(), "bug1.com")
 	_, _ = bugUC.CreateBug(context.Background(), "bug2.com")
@@ -150,7 +145,7 @@ func TestGetAllBugs(t *testing.T) {
 
 func TestDeleteBug(t *testing.T) {
 	mockRepo := &MockBugRepository{}
-	bugUC := NewBugUseCase(mockRepo, dummyLogger{})
+	bugUC := usecase.NewBugUseCase(mockRepo, dummyLogger{})
 
 	bug, _ := bugUC.CreateBug(context.Background(), "bugtodelete.com")
 	cnt, _ := mockRepo.Count(context.Background())

@@ -1,12 +1,12 @@
-package usecase
+package test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/infrastructure/config"
 	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/module/auth/domain"
+	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/module/auth/usecase"
 	"github.com/hidessh99/sub-cf-vpn/checker2-go/pkg/apperror"
 	"github.com/hidessh99/sub-cf-vpn/checker2-go/pkg/password"
 )
@@ -29,22 +29,6 @@ func (m *MockAdminRepository) UpdatePassword(ctx context.Context, id uint, newHa
 	return m.UpdatePasswordFunc(ctx, id, newHash)
 }
 
-type dummyLogger struct{}
-
-func (d dummyLogger) Debug(msg string, ctx string)             {}
-func (d dummyLogger) Info(msg string, ctx string)              {}
-func (d dummyLogger) Warn(msg string, ctx string)              {}
-func (d dummyLogger) Error(msg string, err error, ctx string) {}
-
-func testConfig() *config.AppConfig {
-	return &config.AppConfig{
-		JWT: config.JWTConfig{
-			Secret:    "test-jwt-secret-key-that-is-long-enough",
-			ExpiresIn: "24h",
-		},
-	}
-}
-
 func TestLoginSuccess(t *testing.T) {
 	plainPass := "admin123"
 	hashedPass, _ := password.HashPassword(plainPass)
@@ -59,7 +43,7 @@ func TestLoginSuccess(t *testing.T) {
 		},
 	}
 
-	authUC := NewAuthUseCase(mockRepo, testConfig(), dummyLogger{})
+	authUC := usecase.NewAuthUseCase(mockRepo, testConfig(), testLogger())
 
 	token, admin, err := authUC.Login(context.Background(), "admin", plainPass)
 	if err != nil {
@@ -90,7 +74,7 @@ func TestLoginUserNotFound(t *testing.T) {
 		},
 	}
 
-	authUC := NewAuthUseCase(mockRepo, testConfig(), dummyLogger{})
+	authUC := usecase.NewAuthUseCase(mockRepo, testConfig(), testLogger())
 
 	_, _, err := authUC.Login(context.Background(), "unknown", "anypassword")
 	if err == nil {
@@ -117,7 +101,7 @@ func TestLoginIncorrectPassword(t *testing.T) {
 		},
 	}
 
-	authUC := NewAuthUseCase(mockRepo, testConfig(), dummyLogger{})
+	authUC := usecase.NewAuthUseCase(mockRepo, testConfig(), testLogger())
 
 	_, _, err := authUC.Login(context.Background(), "admin", "wrongpassword")
 	if err == nil {
@@ -153,7 +137,7 @@ func TestChangePasswordSuccess(t *testing.T) {
 		},
 	}
 
-	authUC := NewAuthUseCase(mockRepo, testConfig(), dummyLogger{})
+	authUC := usecase.NewAuthUseCase(mockRepo, testConfig(), testLogger())
 
 	err := authUC.ChangePassword(context.Background(), 1, oldPass, newPass)
 	if err != nil {
@@ -179,7 +163,7 @@ func TestChangePasswordIncorrectCurrentPassword(t *testing.T) {
 		},
 	}
 
-	authUC := NewAuthUseCase(mockRepo, testConfig(), dummyLogger{})
+	authUC := usecase.NewAuthUseCase(mockRepo, testConfig(), testLogger())
 
 	err := authUC.ChangePassword(context.Background(), 1, "wrongCurrentPass", "newSecurePass")
 	if err == nil {
@@ -206,9 +190,9 @@ func TestChangePasswordTooShortNewPassword(t *testing.T) {
 		},
 	}
 
-	authUC := NewAuthUseCase(mockRepo, testConfig(), dummyLogger{})
+	authUC := usecase.NewAuthUseCase(mockRepo, testConfig(), testLogger())
 
-	err := authUC.ChangePassword(context.Background(), 1, oldPass, "short") // length 5 (minimum is 6)
+	err := authUC.ChangePassword(context.Background(), 1, oldPass, "short")
 	if err == nil {
 		t.Fatal("Expected ChangePassword to fail due to short new password")
 	}

@@ -157,7 +157,7 @@ func (s *GeoIPService) lookupFreeIPAPI(ip string) (*domain.GeoIPResult, error) {
 		Success:        true,
 		ASN:            &asnVal,
 		ASOrganization: &data.ASName,
-		Country:        &data.CountryCode,
+		Country:        &country,
 		City:           &data.CityName,
 		Region:         &data.RegionName,
 		PostalCode:     &data.ZipCode,

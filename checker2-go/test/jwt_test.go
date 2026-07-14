@@ -1,8 +1,10 @@
-package jwt
+package test
 
 import (
 	"testing"
 	"time"
+
+	"github.com/hidessh99/sub-cf-vpn/checker2-go/pkg/jwt"
 )
 
 func TestParseDuration(t *testing.T) {
@@ -20,7 +22,7 @@ func TestParseDuration(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		res, err := ParseDuration(tc.input)
+		res, err := jwt.ParseDuration(tc.input)
 		if tc.hasError {
 			if err == nil {
 				t.Errorf("ParseDuration(%q) expected error, got nil", tc.input)
@@ -39,11 +41,11 @@ func TestParseDuration(t *testing.T) {
 func TestJWTTokenSignAndVerify(t *testing.T) {
 	secret := "my-super-secret-key-that-is-long-enough"
 	claims := map[string]interface{}{
-		"id":       123.0, // json numbers decode as float64
+		"id":       123.0,
 		"username": "admin",
 	}
 
-	token, err := SignToken(claims, secret, "1h")
+	token, err := jwt.SignToken(claims, secret, "1h")
 	if err != nil {
 		t.Fatalf("SignToken returned unexpected error: %v", err)
 	}
@@ -53,7 +55,7 @@ func TestJWTTokenSignAndVerify(t *testing.T) {
 	}
 
 	// Verify token
-	parsedClaims, err := VerifyToken(token, secret)
+	parsedClaims, err := jwt.VerifyToken(token, secret)
 	if err != nil {
 		t.Fatalf("VerifyToken returned unexpected error: %v", err)
 	}
@@ -71,7 +73,7 @@ func TestJWTTokenSignAndVerify(t *testing.T) {
 	}
 
 	// Verify token fails with wrong secret
-	_, err = VerifyToken(token, "wrong-secret-key")
+	_, err = jwt.VerifyToken(token, "wrong-secret-key")
 	if err == nil {
 		t.Error("VerifyToken succeeded with incorrect secret key")
 	}

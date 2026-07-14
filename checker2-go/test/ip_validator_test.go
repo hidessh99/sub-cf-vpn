@@ -1,7 +1,9 @@
-package ipvalidator
+package test
 
 import (
 	"testing"
+
+	"github.com/hidessh99/sub-cf-vpn/checker2-go/pkg/ipvalidator"
 )
 
 func TestExtractIP(t *testing.T) {
@@ -18,7 +20,7 @@ func TestExtractIP(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		result := ExtractIP(tc.input)
+		result := ipvalidator.ExtractIP(tc.input)
 		if result != tc.expected {
 			t.Errorf("ExtractIP(%q) = %q, expected %q", tc.input, result, tc.expected)
 		}
@@ -61,7 +63,7 @@ func TestIsPrivateIP(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		result := IsPrivateIP(tc.input)
+		result := ipvalidator.IsPrivateIP(tc.input)
 		if result != tc.expected {
 			t.Errorf("IsPrivateIP(%q) = %t, expected %t", tc.input, result, tc.expected)
 		}
@@ -80,7 +82,7 @@ func TestIsValidPublicIP(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		result := IsValidPublicIP(tc.input)
+		result := ipvalidator.IsValidPublicIP(tc.input)
 		if result != tc.expected {
 			t.Errorf("IsValidPublicIP(%q) = %t, expected %t", tc.input, result, tc.expected)
 		}

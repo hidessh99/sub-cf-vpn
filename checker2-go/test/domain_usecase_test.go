@@ -1,4 +1,4 @@
-package usecase
+package test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/module/domain_mgmt/domain"
+	"github.com/hidessh99/sub-cf-vpn/checker2-go/internal/module/domain_mgmt/usecase"
 	"github.com/hidessh99/sub-cf-vpn/checker2-go/pkg/apperror"
 )
 
@@ -79,16 +80,9 @@ func (m *MockDomainRepository) Count(ctx context.Context) (int64, error) {
 	return int64(len(m.db)), nil
 }
 
-type dummyLogger struct{}
-
-func (d dummyLogger) Debug(msg string, ctx string)             {}
-func (d dummyLogger) Info(msg string, ctx string)              {}
-func (d dummyLogger) Warn(msg string, ctx string)              {}
-func (d dummyLogger) Error(msg string, err error, ctx string) {}
-
 func TestCreateDomain(t *testing.T) {
 	mockRepo := &MockDomainRepository{}
-	domainUC := NewDomainUseCase(mockRepo, dummyLogger{})
+	domainUC := usecase.NewDomainUseCase(mockRepo, testLogger())
 
 	// Success create
 	domainEntry, err := domainUC.CreateDomain(context.Background(), "google.com")
@@ -130,7 +124,7 @@ func TestCreateDomain(t *testing.T) {
 
 func TestGetAllDomains(t *testing.T) {
 	mockRepo := &MockDomainRepository{}
-	domainUC := NewDomainUseCase(mockRepo, dummyLogger{})
+	domainUC := usecase.NewDomainUseCase(mockRepo, testLogger())
 
 	_, _ = domainUC.CreateDomain(context.Background(), "domain1.com")
 	_, _ = domainUC.CreateDomain(context.Background(), "domain2.com")
@@ -150,7 +144,7 @@ func TestGetAllDomains(t *testing.T) {
 
 func TestDeleteDomain(t *testing.T) {
 	mockRepo := &MockDomainRepository{}
-	domainUC := NewDomainUseCase(mockRepo, dummyLogger{})
+	domainUC := usecase.NewDomainUseCase(mockRepo, testLogger())
 
 	domainEntry, _ := domainUC.CreateDomain(context.Background(), "todelete.com")
 	cnt, _ := mockRepo.Count(context.Background())

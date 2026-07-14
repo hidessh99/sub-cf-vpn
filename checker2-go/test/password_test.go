@@ -1,13 +1,15 @@
-package password
+package test
 
 import (
 	"testing"
+
+	"github.com/hidessh99/sub-cf-vpn/checker2-go/pkg/password"
 )
 
 func TestPasswordHashing(t *testing.T) {
 	pass := "my-secure-password"
 
-	hash, err := HashPassword(pass)
+	hash, err := password.HashPassword(pass)
 	if err != nil {
 		t.Fatalf("HashPassword returned unexpected error: %v", err)
 	}
@@ -21,13 +23,13 @@ func TestPasswordHashing(t *testing.T) {
 	}
 
 	// Verify correct password matches
-	err = VerifyPassword(pass, hash)
+	err = password.VerifyPassword(pass, hash)
 	if err != nil {
 		t.Errorf("VerifyPassword failed to match correct password: %v", err)
 	}
 
 	// Verify incorrect password fails
-	err = VerifyPassword("wrong-password", hash)
+	err = password.VerifyPassword("wrong-password", hash)
 	if err == nil {
 		t.Error("VerifyPassword verified incorrect password successfully")
 	}
