@@ -14,7 +14,10 @@
     "username": "admin",
     "password": "hidessh123"
   },
-  "cronCheck": {
-    "enabled": false
-  }
+"cron_check": {
+  "enabled": false,
+  "interval_hours": 24,
+  "batch_size": 20,
+  "timeout_ms": 3000
+}
 }
