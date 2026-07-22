@@ -3,6 +3,7 @@ import { ArrowLeft, Wifi, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { ProxyItem } from '../types';
 import { CONFIG } from '../utils/config';
 import {
+  GeneratedConfigResult,
   generateSingleVlessLink,
   generateSingleTrojanLink,
   generateSingleSSLink,
@@ -117,7 +118,7 @@ const Generator: React.FC = () => {
 
     const port = formSecurity === 'tls' ? 443 : 80;
 
-    let result = { url: '', clash: '' };
+    let result: GeneratedConfigResult = { url: '', clash: '', singbox: '', b64: '' };
 
     if (activeTab === 'vless') {
       result = generateSingleVlessLink(
