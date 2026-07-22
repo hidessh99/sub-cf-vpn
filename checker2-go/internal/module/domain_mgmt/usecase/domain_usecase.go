@@ -44,12 +44,22 @@ func (u *domainUseCase) GetAllDomains(ctx context.Context) ([]domain.DomainEntry
 	return domains, nil
 }
 
+func sanitizeDomain(input string) string {
+	clean := strings.TrimSpace(input)
+	if idx := strings.Index(clean, "://"); idx != -1 {
+		clean = clean[idx+3:]
+	}
+	if idx := strings.IndexAny(clean, "/?#"); idx != -1 {
+		clean = clean[:idx]
+	}
+	return strings.ToLower(clean)
+}
+
 func (u *domainUseCase) CreateDomain(ctx context.Context, domainName string) (*domain.DomainEntry, error) {
-	if domainName == "" {
+	cleanDomain := sanitizeDomain(domainName)
+	if cleanDomain == "" {
 		return nil, apperror.NewValidationError("Domain name is required")
 	}
-
-	cleanDomain := strings.ToLower(strings.TrimSpace(domainName))
 
 	existing, err := u.domainRepo.FindByDomain(ctx, cleanDomain)
 	if err != nil {

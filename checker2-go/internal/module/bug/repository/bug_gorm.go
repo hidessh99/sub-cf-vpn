@@ -19,7 +19,7 @@ func NewBugRepository(db *gorm.DB) domain.BugRepository {
 }
 
 func (r *bugRepository) FindAll(ctx context.Context) ([]domain.Bug, error) {
-	var bugs []domain.Bug
+	bugs := make([]domain.Bug, 0)
 	err := r.db.WithContext(ctx).Order("id DESC").Find(&bugs).Error
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (r *bugRepository) BulkCreate(ctx context.Context, hostnames []string) (int
 }
 
 func (r *bugRepository) GetPublicList(ctx context.Context) ([]string, error) {
-	var list []string
+	list := make([]string, 0)
 	err := r.db.WithContext(ctx).Model(&domain.Bug{}).Where("is_active = ?", true).Pluck("hostname", &list).Error
 	if err != nil {
 		return nil, err

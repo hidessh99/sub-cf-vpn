@@ -19,7 +19,7 @@ func NewDomainRepository(db *gorm.DB) domain.DomainRepository {
 }
 
 func (r *domainRepository) FindAll(ctx context.Context) ([]domain.DomainEntry, error) {
-	var domains []domain.DomainEntry
+	domains := make([]domain.DomainEntry, 0)
 	err := r.db.WithContext(ctx).Order("id DESC").Find(&domains).Error
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (r *domainRepository) BulkCreate(ctx context.Context, domains []string) (in
 }
 
 func (r *domainRepository) GetPublicList(ctx context.Context) ([]string, error) {
-	var list []string
+	list := make([]string, 0)
 	err := r.db.WithContext(ctx).Model(&domain.DomainEntry{}).Where("is_active = ?", true).Pluck("domain", &list).Error
 	if err != nil {
 		return nil, err

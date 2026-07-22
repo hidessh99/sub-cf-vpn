@@ -17,9 +17,9 @@ export const useGeneratorForm = (domains: string[]) => {
     setFormPassword(generateUUID());
   }, []);
 
-  // Set default domain when domains list is loaded
+  // Set default domain when domains list is loaded or updated
   useEffect(() => {
-    if (domains.length > 0 && !formDomain) {
+    if (domains.length > 0 && (!formDomain || !domains.includes(formDomain))) {
       const randomBuffer = new Uint32Array(1);
       window.crypto.getRandomValues(randomBuffer);
       const randomIndex = randomBuffer[0] % domains.length;

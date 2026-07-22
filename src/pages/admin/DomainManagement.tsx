@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../utils/apiClient';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
@@ -13,6 +14,7 @@ interface Domain {
 }
 
 export const DomainManagement: React.FC = () => {
+  const queryClient = useQueryClient();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [newDomain, setNewDomain] = useState('');
   const [loading, setLoading] = useState(true);
@@ -28,8 +30,8 @@ export const DomainManagement: React.FC = () => {
     setLoading(true);
     try {
       const response = await apiClient('/api/v1/domains');
-      if (response.success) {
-        setDomains(response.data);
+      if (response && response.success) {
+        setDomains(Array.isArray(response.data) ? response.data : []);
       }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
@@ -44,19 +46,33 @@ export const DomainManagement: React.FC = () => {
 
   const handleAddDomain = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDomain.trim()) return;
+    let cleaned = newDomain.trim();
+    if (cleaned.includes('://')) {
+      cleaned = cleaned.split('://')[1];
+    }
+    if (cleaned.includes('/')) {
+      cleaned = cleaned.split('/')[0];
+    }
+    if (cleaned.includes('?')) {
+      cleaned = cleaned.split('?')[0];
+    }
+    if (cleaned.includes('#')) {
+      cleaned = cleaned.split('#')[0];
+    }
+    if (!cleaned) return;
 
     setSubmitting(true);
     try {
       const response = await apiClient('/api/v1/domains', {
         method: 'POST',
-        body: JSON.stringify({ domain: newDomain.trim() }),
+        body: JSON.stringify({ domain: cleaned }),
       });
 
-      if (response.success) {
+      if (response && response.success) {
         showToast('Domain added successfully', 'success');
         setNewDomain('');
         fetchDomains();
+        queryClient.invalidateQueries({ queryKey: ['domains'] });
       }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
@@ -78,9 +94,10 @@ export const DomainManagement: React.FC = () => {
         method: 'DELETE',
       });
 
-      if (response.success) {
+      if (response && response.success) {
         showToast('Domain deleted successfully', 'success');
         fetchDomains();
+        queryClient.invalidateQueries({ queryKey: ['domains'] });
       }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
@@ -98,11 +115,12 @@ export const DomainManagement: React.FC = () => {
         method: 'POST',
         body: JSON.stringify(parsed),
       });
-      if (response.success) {
+      if (response && response.success) {
         showToast(response.message || 'Domains imported successfully', 'success');
         setShowImportModal(false);
         setImportJson('');
         fetchDomains();
+        queryClient.invalidateQueries({ queryKey: ['domains'] });
       }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
@@ -172,7 +190,7 @@ export const DomainManagement: React.FC = () => {
                 />
               </svg>
             </div>
-          ) : domains.length === 0 ? (
+          ) : (domains || []).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-1.5">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -200,7 +218,7 @@ export const DomainManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-slate-300 text-xs">
-                {domains.map((d) => (
+                {(domains || []).map((d) => (
                   <tr key={d.id} className="hover:bg-white/[0.01]">
                     <td className="px-6 py-4 font-mono font-medium text-white">{d.domain}</td>
                     <td className="px-6 py-4 text-slate-400">{d.created_at}</td>

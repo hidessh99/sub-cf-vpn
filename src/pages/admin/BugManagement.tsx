@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../utils/apiClient';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { useToast } from '../../components/Toast';
@@ -13,6 +14,7 @@ interface Bug {
 }
 
 export const BugManagement: React.FC = () => {
+  const queryClient = useQueryClient();
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [newBug, setNewBug] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,7 +27,7 @@ export const BugManagement: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importJson, setImportJson] = useState('');
 
-  const filteredBugs = bugs.filter((b) =>
+  const filteredBugs = (bugs || []).filter((b) =>
     b.hostname.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -33,8 +35,8 @@ export const BugManagement: React.FC = () => {
     setLoading(true);
     try {
       const response = await apiClient('/api/v1/bugs');
-      if (response.success) {
-        setBugs(response.data);
+      if (response && response.success) {
+        setBugs(Array.isArray(response.data) ? response.data : []);
       }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
@@ -49,19 +51,33 @@ export const BugManagement: React.FC = () => {
 
   const handleAddBug = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newBug.trim()) return;
+    let cleaned = newBug.trim();
+    if (cleaned.includes('://')) {
+      cleaned = cleaned.split('://')[1];
+    }
+    if (cleaned.includes('/')) {
+      cleaned = cleaned.split('/')[0];
+    }
+    if (cleaned.includes('?')) {
+      cleaned = cleaned.split('?')[0];
+    }
+    if (cleaned.includes('#')) {
+      cleaned = cleaned.split('#')[0];
+    }
+    if (!cleaned) return;
 
     setSubmitting(true);
     try {
       const response = await apiClient('/api/v1/bugs', {
         method: 'POST',
-        body: JSON.stringify({ hostname: newBug.trim() }),
+        body: JSON.stringify({ hostname: cleaned }),
       });
 
-      if (response.success) {
+      if (response && response.success) {
         showToast('Bug hostname added successfully', 'success');
         setNewBug('');
         fetchBugs();
+        queryClient.invalidateQueries({ queryKey: ['bugs'] });
       }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
@@ -83,9 +99,10 @@ export const BugManagement: React.FC = () => {
         method: 'DELETE',
       });
 
-      if (response.success) {
+      if (response && response.success) {
         showToast('Bug hostname deleted successfully', 'success');
         fetchBugs();
+        queryClient.invalidateQueries({ queryKey: ['bugs'] });
       }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
@@ -103,11 +120,12 @@ export const BugManagement: React.FC = () => {
         method: 'POST',
         body: JSON.stringify(parsed),
       });
-      if (response.success) {
+      if (response && response.success) {
         showToast(response.message || 'Bug hostnames imported successfully', 'success');
         setShowImportModal(false);
         setImportJson('');
         fetchBugs();
+        queryClient.invalidateQueries({ queryKey: ['bugs'] });
       }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
