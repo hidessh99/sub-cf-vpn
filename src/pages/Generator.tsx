@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Wifi, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { ProxyItem } from '../types';
 import { CONFIG } from '../utils/config';
@@ -65,16 +65,19 @@ const Generator: React.FC = () => {
   }, [selectedProxy, setManualAlias]);
 
   // Handle Custom URL load
-  const handleReload = (url: string) => {
-    clearStatusMap();
-    setActiveProxyUrl(url);
-  };
+  const handleReload = useCallback(
+    (url: string) => {
+      clearStatusMap();
+      setActiveProxyUrl(url);
+    },
+    [clearStatusMap]
+  );
 
-  const handleSelectProxy = (p: ProxyItem) => {
+  const handleSelectProxy = useCallback((p: ProxyItem) => {
     setSelectedProxy(p);
     setMobileView('detail');
     setShowResult(false);
-  };
+  }, []);
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,10 +157,10 @@ const Generator: React.FC = () => {
     setShowResult(true);
   };
 
-  const handleCreateNew = () => {
+  const handleCreateNew = useCallback(() => {
     resetFormValues();
     setShowResult(false);
-  };
+  }, [resetFormValues]);
 
   // Helper variables for rendering details
   const selectedProxyKey = selectedProxy ? getProxyKey(selectedProxy) : '';
@@ -235,7 +238,10 @@ const Generator: React.FC = () => {
                 <div>
                   {currentStatus.status === 'loading' && (
                     <span className="text-xs text-yellow-500 font-bold flex items-center gap-1">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking
+                      <span className="inline-flex animate-spin">
+                        <Loader2 className="h-3.5 w-3.5" />
+                      </span>{' '}
+                      Checking
                     </span>
                   )}
                   {currentStatus.status === 'active' && (

@@ -19,10 +19,15 @@ export const useProxyStatusChecker = () => {
   const mountedRef = useRef(true);
   const statusMapRef = useRef<Record<string, ProxyStatus>>({});
 
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
     };
   }, []);
 
@@ -110,7 +115,7 @@ export const useProxyStatusChecker = () => {
     } finally {
       activeChecks.current--;
       if (mountedRef.current) {
-        setTimeout(processCheckQueue, 50);
+        timerRef.current = setTimeout(processCheckQueue, 50);
       }
     }
   }, []);

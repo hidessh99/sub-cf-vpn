@@ -61,7 +61,10 @@ export const ProxyRow: React.FC<ProxyRowProps> = React.memo(
           >
             {statusInfo.status === 'loading' && (
               <>
-                <Loader2 className="h-2 w-2 animate-spin" /> Check
+                <span className="inline-flex animate-spin">
+                  <Loader2 className="h-2 w-2" />
+                </span>{' '}
+                Check
               </>
             )}
             {statusInfo.status === 'active' && (
