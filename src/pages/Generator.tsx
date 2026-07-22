@@ -56,6 +56,8 @@ const Generator: React.FC = () => {
   const [showResult, setShowResult] = useState(false);
   const [resultUrl, setResultUrl] = useState('');
   const [resultClash, setResultClash] = useState('');
+  const [resultSingBox, setResultSingBox] = useState('');
+  const [resultB64, setResultB64] = useState('');
 
   const { showToast } = useToast();
 
