@@ -78,6 +78,12 @@ func (u *proxyUseCase) RunHealthCheckCycle(ctx context.Context) {
 			go func(proxy domain.Proxy) {
 				defer wg.Done()
 
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+
 				host := proxy.Proxy
 				if host == "" {
 					host = proxy.IP

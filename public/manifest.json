@@ -1,0 +1,18 @@
+{
+  "name": "HideSSH VPN CF",
+  "short_name": "VPN Generator",
+  "description": "Generate and manage secure Cloudflare VPN configurations including VLESS, Trojan, and Shadowsocks.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#9333ea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/kumpulanremaja/cdn/icon6.svg",
+      "sizes": "512x512 192x192 96x96 48x48",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
