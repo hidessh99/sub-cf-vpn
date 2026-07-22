@@ -63,12 +63,14 @@ export const useProxies = (customUrl?: string) => {
         }
         if (!res.ok) throw new Error('Failed to load domains');
         const data = await res.json();
-        return Array.isArray(data) && data.length > 0 ? data : MAIN_DOMAINS;
+        const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        return list.length > 0 ? list : MAIN_DOMAINS;
       } catch {
         return MAIN_DOMAINS;
       }
     },
-    initialData: MAIN_DOMAINS,
+    staleTime: 5 * 1000,
+    refetchOnMount: true,
   });
 
   const bugsQuery = useQuery({
@@ -81,12 +83,14 @@ export const useProxies = (customUrl?: string) => {
         }
         if (!res.ok) throw new Error('Failed to load bugs');
         const data = await res.json();
-        return Array.isArray(data) && data.length > 0 ? data : BUG_LIST;
+        const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        return list.length > 0 ? list : BUG_LIST;
       } catch {
         return BUG_LIST;
       }
     },
-    initialData: BUG_LIST,
+    staleTime: 5 * 1000,
+    refetchOnMount: true,
   });
 
   return {

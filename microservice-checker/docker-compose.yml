@@ -1,0 +1,51 @@
+services:
+  proxy-service:
+    build:
+      context: ./proxy-service
+      dockerfile: Dockerfile
+    container_name: proxy-service
+    restart: always
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./proxy-service/data:/app/data
+      - ./proxy-service/config.json:/app/config.json:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+
+  domain-service:
+    build:
+      context: ./domain-service
+      dockerfile: Dockerfile
+    container_name: domain-service
+    restart: always
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./domain-service/data:/app/data
+      - ./domain-service/config.json:/app/config.json:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+
+  bug-service:
+    build:
+      context: ./bug-service
+      dockerfile: Dockerfile
+    container_name: bug-service
+    restart: always
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./bug-service/data:/app/data
+      - ./bug-service/config.json:/app/config.json:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
