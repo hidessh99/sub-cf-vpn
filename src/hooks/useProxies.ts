@@ -62,7 +62,7 @@ export const useProxies = (customUrl?: string) => {
           res = await fetch('/domain.json');
         }
         if (!res.ok) throw new Error('Failed to load domains');
-        const data = await res.json();
+        const data: any = await res.json();
         const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
         return list.length > 0 ? list : MAIN_DOMAINS;
       } catch {
@@ -82,7 +82,7 @@ export const useProxies = (customUrl?: string) => {
           res = await fetch('/bug_list.json');
         }
         if (!res.ok) throw new Error('Failed to load bugs');
-        const data = await res.json();
+        const data: any = await res.json();
         const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
         return list.length > 0 ? list : BUG_LIST;
       } catch {
