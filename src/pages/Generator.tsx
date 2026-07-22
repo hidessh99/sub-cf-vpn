@@ -156,6 +156,8 @@ const Generator: React.FC = () => {
 
     setResultUrl(result.url);
     setResultClash(result.clash);
+    setResultSingBox(result.singbox);
+    setResultB64(result.b64);
     setShowResult(true);
   };
 
@@ -295,6 +297,8 @@ const Generator: React.FC = () => {
             <ConfigResult
               resultUrl={resultUrl}
               resultClash={resultClash}
+              resultSingBox={resultSingBox}
+              resultB64={resultB64}
               onBack={() => setShowResult(false)}
               onNew={handleCreateNew}
               providerName={selectedProxy?.provider || 'config'}

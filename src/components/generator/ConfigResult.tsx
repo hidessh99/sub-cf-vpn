@@ -1,11 +1,13 @@
-import React, { useRef } from 'react';
-import { CheckCircle2, Download, Copy } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { CheckCircle2, Download, Copy, Check } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { copyToClipboard } from '../../utils/common';
 
 interface ConfigResultProps {
   resultUrl: string;
-  resultClash: string;
+  resultClash?: string;
+  resultSingBox?: string;
+  resultB64?: string;
   onBack: () => void;
   onNew: () => void;
   providerName: string;
@@ -15,17 +17,24 @@ interface ConfigResultProps {
 export const ConfigResult: React.FC<ConfigResultProps> = ({
   resultUrl,
   resultClash,
+  resultSingBox,
+  resultB64,
   onBack,
   onNew,
   providerName,
   showToast,
 }) => {
   const qrRef = useRef<HTMLDivElement>(null);
+  const [copiedState, setCopiedState] = useState<Record<string, boolean>>({});
 
-  const handleCopy = async (text: string, label: string) => {
+  const handleCopy = async (text: string, fieldKey: string, label: string) => {
     const success = await copyToClipboard(text);
     if (success) {
+      setCopiedState((prev) => ({ ...prev, [fieldKey]: true }));
       showToast(`${label} copied!`, 'success');
+      setTimeout(() => {
+        setCopiedState((prev) => ({ ...prev, [fieldKey]: false }));
+      }, 2000);
     } else {
       showToast(`Failed to copy ${label}`, 'error');
     }
@@ -48,7 +57,7 @@ export const ConfigResult: React.FC<ConfigResultProps> = ({
       link.click();
       document.body.removeChild(link);
       showToast('QR Code saved successfully!', 'success');
-    } catch (err) {
+    } catch {
       showToast('Failed to download QR Code', 'error');
     }
   };
@@ -91,10 +100,20 @@ export const ConfigResult: React.FC<ConfigResultProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-bold text-slate-500 uppercase">V2Ray Link</span>
             <button
-              onClick={() => handleCopy(resultUrl, 'V2Ray Link')}
-              className="text-xs text-purple-400 hover:text-white flex items-center gap-1 transition-colors"
+              onClick={() => handleCopy(resultUrl, 'v2ray', 'V2Ray Link')}
+              className={`text-xs flex items-center gap-1 font-semibold transition-all ${
+                copiedState['v2ray'] ? 'text-emerald-400' : 'text-purple-400 hover:text-white'
+              }`}
             >
-              <Copy className="h-3 w-3" /> Copy
+              {copiedState['v2ray'] ? (
+                <>
+                  <Check className="h-3 w-3 text-emerald-400" /> Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3 w-3" /> Copy
+                </>
+              )}
             </button>
           </div>
           <div className="gento-input rounded-xl p-3">
@@ -104,21 +123,91 @@ export const ConfigResult: React.FC<ConfigResultProps> = ({
           </div>
         </div>
 
+        {/* Base64 Subscription Link Box */}
+        {resultB64 && (
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-slate-500 uppercase">Base64 Subscription</span>
+              <button
+                onClick={() => handleCopy(resultB64, 'b64', 'Base64 Config')}
+                className={`text-xs flex items-center gap-1 font-semibold transition-all ${
+                  copiedState['b64'] ? 'text-emerald-400' : 'text-purple-400 hover:text-white'
+                }`}
+              >
+                {copiedState['b64'] ? (
+                  <>
+                    <Check className="h-3 w-3 text-emerald-400" /> Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" /> Copy Base64
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="gento-input rounded-xl p-3">
+              <div className="font-mono text-[10px] text-purple-300 break-all max-h-16 overflow-y-auto">
+                {resultB64}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Clash Config Box */}
         {resultClash && (
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-[10px] font-bold text-slate-500 uppercase">Clash Config</span>
               <button
-                onClick={() => handleCopy(resultClash, 'Clash Config')}
-                className="text-xs text-purple-400 hover:text-white flex items-center gap-1 transition-colors"
+                onClick={() => handleCopy(resultClash, 'clash', 'Clash Config')}
+                className={`text-xs flex items-center gap-1 font-semibold transition-all ${
+                  copiedState['clash'] ? 'text-emerald-400' : 'text-purple-400 hover:text-white'
+                }`}
               >
-                <Copy className="h-3 w-3" /> Copy
+                {copiedState['clash'] ? (
+                  <>
+                    <Check className="h-3 w-3 text-emerald-400" /> Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" /> Copy
+                  </>
+                )}
               </button>
             </div>
             <div className="gento-input rounded-xl p-3">
-              <pre className="font-mono text-[10px] text-emerald-300 overflow-x-auto whitespace-pre max-h-32">
+              <pre className="font-mono text-[10px] text-emerald-300 overflow-x-auto whitespace-pre max-h-28">
                 <code>{resultClash}</code>
+              </pre>
+            </div>
+          </div>
+        )}
+
+        {/* Sing-Box JSON Box */}
+        {resultSingBox && (
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-slate-500 uppercase">Sing-Box JSON</span>
+              <button
+                onClick={() => handleCopy(resultSingBox, 'singbox', 'Sing-Box JSON')}
+                className={`text-xs flex items-center gap-1 font-semibold transition-all ${
+                  copiedState['singbox'] ? 'text-emerald-400' : 'text-purple-400 hover:text-white'
+                }`}
+              >
+                {copiedState['singbox'] ? (
+                  <>
+                    <Check className="h-3 w-3 text-emerald-400" /> Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" /> Copy JSON
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="gento-input rounded-xl p-3">
+              <pre className="font-mono text-[10px] text-amber-300 overflow-x-auto whitespace-pre max-h-28">
+                <code>{resultSingBox}</code>
               </pre>
             </div>
           </div>
