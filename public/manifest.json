@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://cdn.jsdelivr.net/gh/kumpulanremaja/cdn/icon6.svg",
+      "src": "/icon.svg",
       "sizes": "512x512 192x192 96x96 48x48",
       "type": "image/svg+xml",
       "purpose": "any maskable"
