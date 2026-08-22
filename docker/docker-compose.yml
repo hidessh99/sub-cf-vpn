@@ -18,6 +18,11 @@ services:
       - ${HOST_IP}:${WEB_HTTP_PORT}:4001
     labels:
       createdBy: "bt_apps"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - baota_net
 
@@ -44,6 +49,11 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     labels:
       createdBy: "bt_apps"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - baota_net
 

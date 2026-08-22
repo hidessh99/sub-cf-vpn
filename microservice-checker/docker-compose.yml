@@ -15,6 +15,11 @@ services:
         limits:
           cpus: "0.50"
           memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   domain-service:
     build:
@@ -32,6 +37,11 @@ services:
         limits:
           cpus: "0.50"
           memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   bug-service:
     build:
@@ -49,3 +59,8 @@ services:
         limits:
           cpus: "0.50"
           memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
